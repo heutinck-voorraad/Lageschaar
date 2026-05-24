@@ -378,24 +378,30 @@
 
         // ── Opslaan / laden ─────────────────────────────────────────────
         function saveData() {
-            // Productenlijst wordt NIET in localStorage opgeslagen (te groot)
-            // Notes en cart wel
+            // Producten compact opslaan als array van arrays [naam, qty, pot, prijs]
+            if (currentProducts.length > 0) {
+                const compact = currentProducts.map(p => [p.name, p.quantity, p.potSize, p.price]);
+                try { localStorage.setItem('lageschaarProducts', JSON.stringify(compact)); } catch(e) {}
+            }
             try { localStorage.setItem('lageschaarNotes', JSON.stringify(notes)); } catch(e) {}
             try { localStorage.setItem('lageschaarCart', JSON.stringify(cart)); } catch(e) {}
         }
 
         function loadData() {
-            const savedDatum = localStorage.getItem('lageschaarLijstDatum');
-            const savedNotes = localStorage.getItem('lageschaarNotes');
-            const savedCart  = localStorage.getItem('lageschaarCart');
-            // Verwijder eventueel oude opgeslagen productenlijst om ruimte vrij te maken
-            try { localStorage.removeItem('lageschaarProducts'); } catch(e) {}
+            const savedDatum    = localStorage.getItem('lageschaarLijstDatum');
+            const savedProducts = localStorage.getItem('lageschaarProducts');
+            const savedNotes    = localStorage.getItem('lageschaarNotes');
+            const savedCart     = localStorage.getItem('lageschaarCart');
 
             if (savedDatum) updateHeaderDatum(savedDatum);
 
-            // Geen ingebakken lijst meer — wacht op Excel upload
-            if (currentProducts.length === 0) {
-                // toon lege staat, renderProducts handelt dit af
+            if (savedProducts) {
+                const compact = JSON.parse(savedProducts);
+                // Ondersteun zowel compact [naam,qty,pot,prijs] als oud object-formaat
+                currentProducts = compact.map(p => Array.isArray(p)
+                    ? { name: p[0], quantity: p[1], potSize: p[2], price: p[3] }
+                    : p
+                );
             }
 
             document.getElementById('product-count-header').textContent = currentProducts.length > 0 ? `${currentProducts.length} soorten` : 'Upload een Excel-lijst';
