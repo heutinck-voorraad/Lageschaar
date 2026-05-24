@@ -887,10 +887,22 @@
 
         // ── Backup ──────────────────────────────────────────────────────
         function exportBackup() {
-            if (notes.length === 0) { showInfo('Geen notities om te exporteren.', '📝'); return; }
-            const blob = new Blob([JSON.stringify({notities: notes, exportDatum: new Date().toISOString()}, null, 2)], {type: 'application/json'});
+            if (notes.length === 0 && cart.length === 0 && currentProducts.length === 0) {
+                showInfo('Niets om te exporteren.', '📝'); return;
+            }
+            const backup = {
+                versie: 2,
+                exportDatum: new Date().toISOString(),
+                lijstDatum: localStorage.getItem('lageschaarLijstDatum') || '',
+                producten: currentProducts.map(p => [p.name, p.quantity, p.potSize, p.price]),
+                vorigeNamen: (() => { try { return JSON.parse(localStorage.getItem('lageschaarCurrentNames') || '[]'); } catch(e) { return []; } })(),
+                winkelmand: cart,
+                notities: notes,
+            };
+            const datum = new Date().toLocaleDateString('nl-NL').replace(/\//g, '-');
+            const blob = new Blob([JSON.stringify(backup, null, 2)], {type: 'application/json'});
             const url = URL.createObjectURL(blob);
-            const a = document.createElement('a'); a.href = url; a.download = 'backup-lageschaar.json'; a.click();
+            const a = document.createElement('a'); a.href = url; a.download = `backup-lageschaar-${datum}.json`; a.click();
             URL.revokeObjectURL(url);
         }
 
@@ -901,10 +913,49 @@
             reader.onload = function(e) {
                 try {
                     const imported = JSON.parse(e.target.result);
-                    if (imported.notities) notes = imported.notities;
-                    saveData(); renderNotes();
-                    showToast(`✓ ${notes.length} notities hersteld`);
-                } catch { showInfo('Ongeldig bestand.', '⚠️'); }
+                    let msg = [];
+
+                    // Notities
+                    if (imported.notities && imported.notities.length > 0) {
+                        notes = imported.notities;
+                        msg.push(`${notes.length} notities`);
+                    }
+
+                    // Winkelmand
+                    if (imported.winkelmand && imported.winkelmand.length > 0) {
+                        cart = imported.winkelmand;
+                        msg.push(`${cart.length} items in winkelmand`);
+                    }
+
+                    // Voorraadlijst (versie 2: compact array, versie 1: had geen producten)
+                    if (imported.producten && imported.producten.length > 0) {
+                        currentProducts = imported.producten.map(p => Array.isArray(p)
+                            ? { name: p[0], quantity: p[1], potSize: p[2], price: p[3] }
+                            : p
+                        );
+                        msg.push(`${currentProducts.length} planten`);
+                    }
+
+                    // Vorige namenlijst voor vergelijking
+                    if (imported.vorigeNamen && imported.vorigeNamen.length > 0) {
+                        try { localStorage.setItem('lageschaarCurrentNames', JSON.stringify(imported.vorigeNamen)); } catch(e) {}
+                    }
+
+                    // Lijstdatum
+                    if (imported.lijstDatum) {
+                        localStorage.setItem('lageschaarLijstDatum', imported.lijstDatum);
+                        updateHeaderDatum(imported.lijstDatum);
+                    }
+
+                    saveData();
+                    renderProducts();
+                    renderNotes();
+                    renderCart();
+                    updateMandTab();
+                    document.getElementById('product-count-header').textContent = currentProducts.length > 0 ? `${currentProducts.length} soorten` : 'Upload een Excel-lijst';
+
+                    showToast(`✓ Hersteld: ${msg.join(', ')}`);
+                } catch(err) { showInfo('Ongeldig bestand: ' + err.message, '⚠️'); }
             };
             reader.readAsText(file);
             event.target.value = '';
