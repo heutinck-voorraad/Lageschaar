@@ -248,6 +248,64 @@
         </div>
     </div>
 
+    <!-- In-app bevestigingsdialoog -->
+    <div id="confirm-dialog" style="display:none;position:fixed;z-index:2000;left:0;top:0;width:100%;height:100%;background:rgba(0,0,0,0.5);">
+        <div style="background:white;margin:30% auto;padding:24px;border-radius:12px;width:88%;max-width:360px;box-shadow:0 8px 24px rgba(0,0,0,0.2);">
+            <div id="confirm-icon" style="font-size:36px;text-align:center;margin-bottom:12px;"></div>
+            <p id="confirm-message" style="text-align:center;font-size:16px;font-weight:600;margin-bottom:6px;color:#333;"></p>
+            <p id="confirm-sub" style="text-align:center;font-size:13px;color:#888;margin-bottom:20px;"></p>
+            <div style="display:flex;gap:10px;">
+                <button id="confirm-cancel" onclick="closeConfirm()"
+                    style="flex:1;padding:12px;background:#f0f4f8;color:#555;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;">
+                    Annuleren
+                </button>
+                <button id="confirm-ok"
+                    style="flex:1;padding:12px;background:#d32f2f;color:white;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;">
+                    Verwijderen
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- In-app melding (info/waarschuwing) -->
+    <div id="info-dialog" style="display:none;position:fixed;z-index:2000;left:0;top:0;width:100%;height:100%;background:rgba(0,0,0,0.5);">
+        <div style="background:white;margin:30% auto;padding:24px;border-radius:12px;width:88%;max-width:360px;box-shadow:0 8px 24px rgba(0,0,0,0.2);">
+            <div id="info-icon" style="font-size:36px;text-align:center;margin-bottom:12px;"></div>
+            <p id="info-message" style="text-align:center;font-size:15px;font-weight:600;color:#333;margin-bottom:20px;"></p>
+            <button onclick="closeInfo()"
+                style="width:100%;padding:12px;background:#1565c0;color:white;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;">
+                OK
+            </button>
+        </div>
+    </div>
+
+    <!-- Import resultaat dialoog -->
+    <div id="import-dialog" style="display:none;position:fixed;z-index:3000;left:0;top:0;width:100%;height:100%;background:rgba(0,0,0,0.5);">
+        <div style="background:white;margin:8% auto;padding:24px;border-radius:12px;width:90%;max-width:420px;box-shadow:0 8px 24px rgba(0,0,0,0.2);max-height:80vh;display:flex;flex-direction:column;">
+            <div style="font-size:32px;text-align:center;margin-bottom:8px;">📊</div>
+            <h3 style="text-align:center;color:#1565c0;margin-bottom:16px;font-size:17px;" id="import-title"></h3>
+            <div style="display:flex;gap:10px;margin-bottom:16px;">
+                <div style="flex:1;background:#e3f2fd;border-radius:8px;padding:12px;text-align:center;">
+                    <div style="font-size:24px;font-weight:700;color:#1565c0;" id="import-total"></div>
+                    <div style="font-size:11px;color:#666;margin-top:2px;">totaal soorten</div>
+                </div>
+                <div style="flex:1;background:#e8f5e9;border-radius:8px;padding:12px;text-align:center;">
+                    <div style="font-size:24px;font-weight:700;color:#2e7d32;" id="import-new-count"></div>
+                    <div style="font-size:11px;color:#666;margin-top:2px;">nieuw t.o.v. vorige</div>
+                </div>
+                <div style="flex:1;background:#fff3e0;border-radius:8px;padding:12px;text-align:center;">
+                    <div style="font-size:24px;font-weight:700;color:#e65100;" id="import-removed-count"></div>
+                    <div style="font-size:11px;color:#666;margin-top:2px;">niet meer in lijst</div>
+                </div>
+            </div>
+            <div id="import-new-list" style="overflow-y:auto;flex:1;margin-bottom:14px;"></div>
+            <button onclick="closeImportDialog()"
+                style="width:100%;padding:12px;background:#1565c0;color:white;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;">
+                Naar voorraadlijst →
+            </button>
+        </div>
+    </div>
+
     <!-- Notitie Modal -->
     <div id="note-modal" class="modal">
         <div class="modal-content">
@@ -278,20 +336,21 @@
             </div>
             <div class="modal-footer">
                 <button class="btn btn-secondary" onclick="closeNoteModal()" style="flex:1;">Annuleren</button>
-                <button class="btn" onclick="saveNote()" style="flex:1;">Toevoegen</button>
+                <button class="btn" id="modal-btn-notitie" onclick="saveNote()" style="flex:1;display:none;">📝 In notities</button>
+                <button class="btn" id="modal-btn-mand" onclick="saveToCart()" style="flex:1;">🛒 In winkelmand</button>
             </div>
         </div>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script>
-        const BUILTIN_PRODUCTS = [{"name": "Acaena magellanica", "quantity": "103", "potSize": "P9", "price": 1.28}, {"name": "Acanthus spinosus", "quantity": "57", "potSize": "P9", "price": 2.04}, {"name": "Achillea 'Coronation Gold'", "quantity": "1321", "potSize": "P9", "price": 1.6}, {"name": "Achillea m. 'Apfelblüte'", "quantity": "714", "potSize": "P9", "price": 1.52}, {"name": "Achillea m. 'Cerise Queen'", "quantity": "393", "potSize": "P9", "price": 1.03}, {"name": "Achillea m. 'Lachsschönheit'", "quantity": "1473", "potSize": "P9", "price": 1.52}, {"name": "Achillea m. 'Paprika'", "quantity": "1756", "potSize": "P9", "price": 1.52}, {"name": "Achillea m. 'Red Beauty'", "quantity": "132", "potSize": "P9", "price": 1.52}, {"name": "Achillea 'Moonshine'", "quantity": "504", "potSize": "P9", "price": 1.69}, {"name": "Actaea simp. 'Atropurpurea'", "quantity": "189", "potSize": "P9", "price": 3.38}, {"name": "Actaea simp. 'Pink Spike'", "quantity": "146", "potSize": "P9", "price": 3.38}, {"name": "Actaea simp. 'White Pearl'", "quantity": "635", "potSize": "P9", "price": 3.34}, {"name": "Agastache 'Black Adder'", "quantity": "886", "potSize": "P9", "price": 1.64}, {"name": "Agastache 'Blue Fortune'", "quantity": "61", "potSize": "P9", "price": 1.53}, {"name": "Agastache rugosa", "quantity": "214", "potSize": "P9", "price": 1.37}, {"name": "Alchemilla alpina", "quantity": "149", "potSize": "P9", "price": 1.69}, {"name": "Alchemilla erythropoda", "quantity": "225", "potSize": "P9", "price": 1.37}, {"name": "Allium 'Summer Beauty'", "quantity": "101", "potSize": "P9", "price": 2.27}, {"name": "Ammophila arenaria", "quantity": "326", "potSize": "P9", "price": 1.45}, {"name": "Amorpha canescens", "quantity": "280", "potSize": "P9", "price": 2.44}, {"name": "Amsonia 'Blue Ice'", "quantity": "1912", "potSize": "P9", "price": 2.15}, {"name": "Amsonia ciliata", "quantity": "973", "potSize": "P9", "price": 2.04}, {"name": "Amsonia hubrichtii", "quantity": "2000+", "potSize": "P9", "price": 2.15}, {"name": "Amsonia tabernaem. salicifolia", "quantity": "893", "potSize": "P9", "price": 2.1}, {"name": "Amsonia tabernaemontana", "quantity": "973", "potSize": "P9", "price": 1.96}, {"name": "Anaphalis margaritacea 'Neuschnee'", "quantity": "79", "potSize": "P9", "price": 1.34}, {"name": "Anaphalis tripl. 'Sommerschnee'", "quantity": "434", "potSize": "P9", "price": 1.61}, {"name": "Anaphalis triplinervis", "quantity": "1881", "potSize": "P9", "price": 1.34}, {"name": "Andropogon gerardii", "quantity": "106", "potSize": "P9", "price": 1.74}, {"name": "Anemone h. 'Praecox'", "quantity": "306", "potSize": "P9", "price": 1.74}, {"name": "Anemone h. 'Prinz Heinrich'", "quantity": "621", "potSize": "P9", "price": 1.74}, {"name": "Anemone h. 'September Charm'", "quantity": "608", "potSize": "P9", "price": 1.74}, {"name": "Anemone h. 'Splendens'", "quantity": "1012", "potSize": "P9", "price": 1.74}, {"name": "Anemone hyb. 'Hadspen Abundance'", "quantity": "430", "potSize": "P9", "price": 1.74}, {"name": "Anemone hyb. 'Rosenschale'", "quantity": "257", "potSize": "P9", "price": 1.74}, {"name": "Anemone hyb. 'Whirlwind'", "quantity": "1449", "potSize": "P9", "price": 1.74}, {"name": "Antennaria dioica 'Rubra'", "quantity": "46", "potSize": "P9", "price": 1.37}, {"name": "Anthemis hyb. 'Sauce Hollandaise'", "quantity": "76", "potSize": "P9", "price": 1.41}, {"name": "Anthoxanthum odoratum", "quantity": "119", "potSize": "P9", "price": 1.82}, {"name": "Aquilegia alpina", "quantity": "1032", "potSize": "P9", "price": 1.23}, {"name": "Aquilegia canadensis", "quantity": "594", "potSize": "P9", "price": 1.43}, {"name": "Aquilegia chrysantha 'Yellow Queen'", "quantity": "296", "potSize": "P9", "price": 1.23}, {"name": "Aquilegia 'Crimson Star'", "quantity": "463", "potSize": "P9", "price": 1.23}, {"name": "Aquilegia 'McKana Hybrids'", "quantity": "541", "potSize": "P9", "price": 1.23}, {"name": "Aquilegia v. 'Altrosa'", "quantity": "788", "potSize": "P9", "price": 1.52}, {"name": "Aquilegia v. 'Blue Barlow'", "quantity": "374", "potSize": "P9", "price": 1.43}, {"name": "Aquilegia v. 'Ruby Port'", "quantity": "545", "potSize": "P9", "price": 1.52}, {"name": "Arabis caucas. 'Schneehaube'", "quantity": "107", "potSize": "P9", "price": 1.05}, {"name": "Arenaria montana", "quantity": "90", "potSize": "P9", "price": 1.16}, {"name": "Armeria mar. 'Alba'", "quantity": "82", "potSize": "P9", "price": 1.1}, {"name": "Armeria pseudarm. 'Ballerina Red'", "quantity": "55", "potSize": "P9", "price": 1.52}, {"name": "Armeria pseudarmeria", "quantity": "1197", "potSize": "P9", "price": 1.52}, {"name": "Arrhenatherum bulbosum 'Variegatum'", "quantity": "60", "potSize": "P9", "price": 1.45}, {"name": "Artemisia abrotanum", "quantity": "29", "potSize": "P9", "price": 1.73}, {"name": "Artemisia dracunculus", "quantity": "92", "potSize": "P9", "price": 1.16}, {"name": "Artemisia lud. 'Valerie Finnis'", "quantity": "58", "potSize": "P9", "price": 1.55}, {"name": "Artemisia pontica", "quantity": "130", "potSize": "P9", "price": 1.82}, {"name": "Artemisia schmidt. 'Nana'", "quantity": "124", "potSize": "P9", "price": 1.74}, {"name": "Asclepias inc. 'Ice Ballet'", "quantity": "439", "potSize": "P9", "price": 1.86}, {"name": "Asclepias incarnata", "quantity": "39", "potSize": "P9", "price": 1.86}, {"name": "Asclepias tub. 'Gay Butterflies'", "quantity": "121", "potSize": "P9", "price": 1.96}, {"name": "Asclepias tub. 'Hello Yellow'", "quantity": "365", "potSize": "P9", "price": 1.96}, {"name": "Asclepias tuberosa", "quantity": "302", "potSize": "P9", "price": 1.86}, {"name": "Asphodeline lutea", "quantity": "37", "potSize": "P9", "price": 1.75}, {"name": "Aster (D) 'Alice Haslam'", "quantity": "48", "potSize": "P9", "price": 1.28}, {"name": "Aster (D) 'Anneke'", "quantity": "33", "potSize": "P9", "price": 1.28}, {"name": "Aster (D) 'Apollo'", "quantity": "128", "potSize": "P9", "price": 1.28}, {"name": "Aster (D) 'Herbstgruss v. Bresserh'", "quantity": "82", "potSize": "P9", "price": 1.28}, {"name": "Aster (D) 'Lady in Blue'", "quantity": "232", "potSize": "P9", "price": 1.28}, {"name": "Aster (D) 'Oktoberschneekuppel'", "quantity": "128", "potSize": "P9", "price": 1.28}, {"name": "Aster (D) 'Prof. Anton Kippenberg'", "quantity": "215", "potSize": "P9", "price": 1.28}, {"name": "Aster (D) 'Starlight'", "quantity": "269", "potSize": "P9", "price": 1.28}, {"name": "Aster (U) 'Esther'", "quantity": "144", "potSize": "P9", "price": 1.43}, {"name": "Aster (U) 'Monte Cassino'", "quantity": "1813", "potSize": "P9", "price": 1.43}, {"name": "Aster ageratoides 'Adustus Nanus' (Kalimeris i. 'Nana Blue')", "quantity": "124", "potSize": "P9", "price": 1.59}, {"name": "Aster ageratoides 'Ashvi'", "quantity": "2000+", "potSize": "P9", "price": 1.37}, {"name": "Aster ageratoides 'Ezo Murazaki'", "quantity": "2000+", "potSize": "P9", "price": 1.37}, {"name": "Aster ageratoides 'Stardust'", "quantity": "2000+", "potSize": "P9", "price": 1.37}, {"name": "Aster ageratoides 'Starshine'", "quantity": "1068", "potSize": "P9", "price": 1.59}, {"name": "Aster alpinus", "quantity": "75", "potSize": "P9", "price": 1.11}, {"name": "Aster amellus 'Dr Otto Petschek'", "quantity": "62", "potSize": "P9", "price": 1.82}, {"name": "Aster amellus 'Rosa Erfüllung'", "quantity": "81", "potSize": "P9", "price": 1.82}, {"name": "Aster amellus 'Rudolf Goethe'", "quantity": "243", "potSize": "P9", "price": 1.45}, {"name": "Aster azureus", "quantity": "168", "potSize": "P9", "price": 1.73}, {"name": "Aster cordifolius 'Silver Spray'", "quantity": "221", "potSize": "P9", "price": 1.54}, {"name": "Aster ericoides 'Blue Star'", "quantity": "323", "potSize": "P9", "price": 1.37}, {"name": "Aster ericoides 'Erlkönig'", "quantity": "87", "potSize": "P9", "price": 1.37}, {"name": "Aster ericoides 'Golden Spray'", "quantity": "1285", "potSize": "P9", "price": 1.37}, {"name": "Aster ericoides 'Lovely'", "quantity": "853", "potSize": "P9", "price": 1.6}, {"name": "Aster ericoides 'Snowflurry'", "quantity": "48", "potSize": "P9", "price": 1.37}, {"name": "Aster frikartii 'Jungfrau'", "quantity": "516", "potSize": "P9", "price": 1.82}, {"name": "Aster frikartii 'Mönch'", "quantity": "2000+", "potSize": "P9", "price": 1.82}, {"name": "Aster l. 'Horizontalis'", "quantity": "450", "potSize": "P9", "price": 1.82}, {"name": "Aster laevis", "quantity": "152", "potSize": "P9", "price": 1.82}, {"name": "Aster linosyris", "quantity": "130", "potSize": "P9", "price": 1.59}, {"name": "Aster 'Little Carlow'", "quantity": "173", "potSize": "P9", "price": 1.63}, {"name": "Aster macrophyllus", "quantity": "44", "potSize": "P9", "price": 1.59}, {"name": "Aster macrophyllus 'Albus'", "quantity": "2000+", "potSize": "P9", "price": 1.59}, {"name": "Aster n.-a. 'And. an Alma Pötschke'", "quantity": "270", "potSize": "P9", "price": 1.52}, {"name": "Aster n.-a. 'And. an Paul Gerber'", "quantity": "1164", "potSize": "P9", "price": 1.52}, {"name": "Aster n.-a. 'Purple Dome'", "quantity": "577", "potSize": "P9", "price": 1.52}, {"name": "Aster n.-b. 'Marie Ballard'", "quantity": "125", "potSize": "P9", "price": 1.41}, {"name": "Aster n.-b. 'Patricia Ballard'", "quantity": "280", "potSize": "P9", "price": 1.41}, {"name": "Aster n.-b. 'Royal Ruby'", "quantity": "143", "potSize": "P9", "price": 1.41}, {"name": "Aster n.-b. 'White Ladies'", "quantity": "134", "potSize": "P9", "price": 1.41}, {"name": "Aster n.-b. 'Winston Churchill'", "quantity": "281", "potSize": "P9", "price": 1.41}, {"name": "Aster oblong. 'October Skies'", "quantity": "1107", "potSize": "P9", "price": 1.96}, {"name": "Aster 'Pink Star'", "quantity": "114", "potSize": "P9", "price": 1.52}, {"name": "Aster ptarmicoides", "quantity": "2000+", "potSize": "P9", "price": 1.82}, {"name": "Aster puniceus", "quantity": "115", "potSize": "P9", "price": 1.63}, {"name": "Aster pyrenaeus 'Lutetia'", "quantity": "2000+", "potSize": "P9", "price": 1.82}, {"name": "Aster radula 'August Sky'", "quantity": "507", "potSize": "P9", "price": 1.72}, {"name": "Aster sedifolius 'Nanus'", "quantity": "234", "potSize": "P9", "price": 1.59}, {"name": "Aster thomsonii", "quantity": "41", "potSize": "P9", "price": 1.82}, {"name": "Aster 'Treffpunkt'", "quantity": "39", "potSize": "P9", "price": 1.59}, {"name": "Aster 'Wood's Light Blue'", "quantity": "29", "potSize": "P9", "price": 1.51}, {"name": "Athyrium filix-femina", "quantity": "340", "potSize": "P9", "price": 1.64}, {"name": "Aubrieta 'Cascade Purple'", "quantity": "58", "potSize": "P9", "price": 1.04}, {"name": "Aurinia saxatilis", "quantity": "56", "potSize": "P9", "price": 1.16}, {"name": "Baptisia australis", "quantity": "418", "potSize": "P9", "price": 2.04}, {"name": "Barbarea vulgaris", "quantity": "140", "potSize": "P9", "price": 1.82}, {"name": "Boltonia asteroides 'Snowbank'", "quantity": "123", "potSize": "P9", "price": 2.06}, {"name": "Bouteloua gracilis", "quantity": "1048", "potSize": "P9", "price": 1.37}, {"name": "Buphthalmum salicifolium", "quantity": "738", "potSize": "P9", "price": 1.06}, {"name": "Calamagrostis acut. 'Karl Foerster'", "quantity": "2000+", "potSize": "P9", "price": 1.64}, {"name": "Calamagrostis acut. 'Overdam'", "quantity": "39", "potSize": "P9", "price": 1.64}, {"name": "Calamintha n. 'Blue Cloud'", "quantity": "2000+", "potSize": "P9", "price": 1.6}, {"name": "Calamintha n. nepeta", "quantity": "1774", "potSize": "P9", "price": 1.43}, {"name": "Campanula glom. 'Acaulis'", "quantity": "196", "potSize": "P9", "price": 1.16}, {"name": "Campanula glom. 'Alba'", "quantity": "115", "potSize": "P9", "price": 1.16}, {"name": "Campanula lact. 'Pouffe'", "quantity": "31", "potSize": "P9", "price": 1.86}, {"name": "Campanula lactiflora", "quantity": "27", "potSize": "P9", "price": 1.96}, {"name": "Campanula rapunculus", "quantity": "324", "potSize": "P9", "price": 1.37}, {"name": "Cardamine pratensis", "quantity": "67", "potSize": "P9", "price": 1.37}, {"name": "Carex buchananii", "quantity": "35", "potSize": "P9", "price": 1.52}, {"name": "Carex morrowii 'Aureovariegata'", "quantity": "123", "potSize": "P9", "price": 1.69}, {"name": "Carex morrowii 'Ice Dance'", "quantity": "202", "potSize": "P9", "price": 1.53}, {"name": "Carex morrowii 'Irish Green'", "quantity": "2000+", "potSize": "P9", "price": 1.53}, {"name": "Carex morrowii 'Variegata'", "quantity": "2000+", "potSize": "P9", "price": 1.53}, {"name": "Carex muskingumensis", "quantity": "360", "potSize": "P9", "price": 1.43}, {"name": "Carex osh. 'J.S. Greenwell'", "quantity": "935", "potSize": "P9", "price": 2.01}, {"name": "Carex oshim. 'Evergold'", "quantity": "32", "potSize": "P9", "price": 2.01}, {"name": "Carex pendula", "quantity": "190", "potSize": "P9", "price": 1.29}, {"name": "Carex plantaginea", "quantity": "38", "potSize": "P9", "price": 2.12}, {"name": "Carex testacea", "quantity": "872", "potSize": "P9", "price": 1.91}, {"name": "Centaurea jacea", "quantity": "116", "potSize": "P9", "price": 1.37}, {"name": "Ceratostigma plumbaginoides", "quantity": "381", "potSize": "P9", "price": 1.45}, {"name": "Chelidonium majus", "quantity": "226", "potSize": "P9", "price": 1.83}, {"name": "Chelone obliqua", "quantity": "1898", "potSize": "P9", "price": 1.37}, {"name": "Chrysanthemum (R) 'Clara Curtis'", "quantity": "181", "potSize": "P9", "price": 1.52}, {"name": "Chrysanthemum (R) 'D. of Edinburgh'", "quantity": "106", "potSize": "P9", "price": 1.52}, {"name": "Chrysanthemum (R) 'Mary Stoker'", "quantity": "392", "potSize": "P9", "price": 1.52}, {"name": "Chrysogonum virginianum", "quantity": "90", "potSize": "P9", "price": 1.96}, {"name": "Clematis 'Mrs Robert Brydon'", "quantity": "92", "potSize": "P9", "price": 2.73}, {"name": "Clematis 'Praecox'", "quantity": "272", "potSize": "P9", "price": 2.73}, {"name": "Clinopodium vulgare", "quantity": "58", "potSize": "P9", "price": 1.82}, {"name": "Convallaria majalis", "quantity": "1482", "potSize": "P9", "price": 1.59}, {"name": "Coreopsis 'Full Moon'", "quantity": "195", "potSize": "P9", "price": 2.0}, {"name": "Coreopsis lanceolata 'Sterntaler'", "quantity": "35", "potSize": "P9", "price": 1.16}, {"name": "Coreopsis rosea 'American Dream'", "quantity": "98", "potSize": "P9", "price": 1.37}, {"name": "Coreopsis tripteris", "quantity": "134", "potSize": "P9", "price": 2.28}, {"name": "Coreopsis vert. 'Grandiflora'", "quantity": "47", "potSize": "P9", "price": 1.37}, {"name": "Coreopsis vert. 'Moonbeam'", "quantity": "251", "potSize": "P9", "price": 1.37}, {"name": "Coreopsis vert. 'Zagreb'", "quantity": "57", "potSize": "P9", "price": 1.37}, {"name": "Cymbalaria muralis", "quantity": "54", "potSize": "P9", "price": 1.28}, {"name": "Cyrtomium falcatum", "quantity": "76", "potSize": "P9", "price": 1.96}, {"name": "Delphinium (B) 'Bellamosum'", "quantity": "34", "potSize": "P9", "price": 1.37}, {"name": "Delphinium (B) 'Casa Blanca'", "quantity": "137", "potSize": "P9", "price": 1.37}, {"name": "Delphinium gr. 'Blauer Zwerg'", "quantity": "116", "potSize": "P9", "price": 1.37}, {"name": "Deschampsia cesp. 'Bronzeschleier'", "quantity": "71", "potSize": "P9", "price": 1.37}, {"name": "Deschampsia cesp. 'Goldschleier'", "quantity": "649", "potSize": "P9", "price": 1.37}, {"name": "Deschampsia cesp. 'Goldtau'", "quantity": "2000+", "potSize": "P9", "price": 1.37}, {"name": "Deschampsia cesp. 'Palava'", "quantity": "1225", "potSize": "P9", "price": 1.45}, {"name": "Desmodium canadense", "quantity": "214", "potSize": "P9", "price": 1.87}, {"name": "Dianthus carthusianorum", "quantity": "50", "potSize": "P9", "price": 1.37}, {"name": "Dianthus delt. 'Albiflorus'", "quantity": "91", "potSize": "P9", "price": 1.01}, {"name": "Dianthus delt. 'Brilliant'", "quantity": "147", "potSize": "P9", "price": 1.01}, {"name": "Dicentra spectabilis 'Alba'", "quantity": "706", "potSize": "P9", "price": 1.75}, {"name": "Digitalis purpurea", "quantity": "45", "potSize": "P9", "price": 1.28}, {"name": "Diplotaxis tenuifolia", "quantity": "92", "potSize": "P9", "price": 1.82}, {"name": "Dipsacus fullonum (Dipsacus sylvestris)", "quantity": "79", "potSize": "P9", "price": 1.37}, {"name": "Draba sibirica", "quantity": "58", "potSize": "P9", "price": 1.37}, {"name": "Dryopteris affinis", "quantity": "247", "potSize": "P9", "price": 1.64}, {"name": "Echinacea p. 'Green Twister'", "quantity": "198", "potSize": "P9", "price": 1.59}, {"name": "Echinacea p. 'Leuchtstern'", "quantity": "421", "potSize": "P9", "price": 1.4}, {"name": "Echinacea p. 'Magnus'", "quantity": "565", "potSize": "P9", "price": 1.4}, {"name": "Echinacea p. 'Pica Bella'", "quantity": "34", "potSize": "P9", "price": 3.31}, {"name": "Echinacea pal. 'Hula Dancer'", "quantity": "459", "potSize": "P9", "price": 1.72}, {"name": "Echinacea purp. 'Prairie Splendor'", "quantity": "82", "potSize": "P9", "price": 1.82}, {"name": "Echinops bannaticus 'Taplow Blue'", "quantity": "149", "potSize": "P9", "price": 1.82}, {"name": "Elymus magellanicus", "quantity": "63", "potSize": "P9", "price": 1.59}, {"name": "Eragrostis trichodes", "quantity": "408", "potSize": "P9", "price": 1.81}, {"name": "Erigeron 'Rosa Juwel'", "quantity": "272", "potSize": "P9", "price": 1.09}, {"name": "Erigeron speciosus 'Grandiflorus'", "quantity": "33", "potSize": "P9", "price": 1.09}, {"name": "Eryngium agavifolium", "quantity": "373", "potSize": "P9", "price": 1.91}, {"name": "Eryngium zabelii 'Big Blue'", "quantity": "77", "potSize": "P9", "price": 3.07}, {"name": "Eupatorium mac. 'Glutball'", "quantity": "380", "potSize": "P9", "price": 1.96}, {"name": "Eupatorium mac. 'Phantom'", "quantity": "118", "potSize": "P9", "price": 2.55}, {"name": "Eupatorium mac. 'Purple Bush'", "quantity": "82", "potSize": "P9", "price": 1.96}, {"name": "Eupatorium rugosum 'Chocolate'", "quantity": "192", "potSize": "P9", "price": 1.82}, {"name": "Euphorbia polychroma", "quantity": "1930", "potSize": "P9", "price": 1.45}, {"name": "Festuca gautieri", "quantity": "278", "potSize": "P9", "price": 1.28}, {"name": "Festuca glauca", "quantity": "456", "potSize": "P9", "price": 1.23}, {"name": "Festuca glauca 'Blaufuchs'", "quantity": "278", "potSize": "P9", "price": 1.28}, {"name": "Festuca glauca 'Elijah Blue'", "quantity": "254", "potSize": "P9", "price": 1.28}, {"name": "Festuca mairei", "quantity": "88", "potSize": "P9", "price": 1.45}, {"name": "Festuca ovina", "quantity": "149", "potSize": "P9", "price": 1.28}, {"name": "Filipendula purpurea", "quantity": "417", "potSize": "P9", "price": 1.82}, {"name": "Filipendula rubra 'Venusta'", "quantity": "400", "potSize": "P9", "price": 2.35}, {"name": "Fragaria chiloensis 'Chaval'", "quantity": "288", "potSize": "P9", "price": 1.45}, {"name": "Fragaria 'Frel'", "quantity": "110", "potSize": "P9", "price": 1.45}, {"name": "Fragaria moschata", "quantity": "71", "potSize": "P9", "price": 1.45}, {"name": "Gaillardia 'Kobold'", "quantity": "174", "potSize": "P9", "price": 1.23}, {"name": "Galega officinalis", "quantity": "162", "potSize": "P9", "price": 1.55}, {"name": "Galium verum", "quantity": "94", "potSize": "P9", "price": 1.6}, {"name": "Gaura lindh. 'Short Form'", "quantity": "154", "potSize": "P9", "price": 1.64}, {"name": "Gaura lindh. 'Siskiyou Pink'", "quantity": "286", "potSize": "P9", "price": 1.64}, {"name": "Geranium 'Ann Folkard'", "quantity": "537", "potSize": "P9", "price": 2.59}, {"name": "Geranium 'Anne Thomson'", "quantity": "59", "potSize": "P9", "price": 2.59}, {"name": "Geranium 'Azure Rush'", "quantity": "1439", "potSize": "P9", "price": 3.34}, {"name": "Geranium 'Blue Blood'", "quantity": "163", "potSize": "P9", "price": 2.46}, {"name": "Geranium cantabrig. 'Cambridge'", "quantity": "814", "potSize": "P9", "price": 1.37}, {"name": "Geranium cantabrig. 'Karmina'", "quantity": "2000+", "potSize": "P9", "price": 1.37}, {"name": "Geranium cantabrig. 'St Ola'", "quantity": "263", "potSize": "P9", "price": 1.37}, {"name": "Geranium cin. 'Ballerina'", "quantity": "108", "potSize": "P9", "price": 1.96}, {"name": "Geranium 'Dilys'", "quantity": "83", "potSize": "P9", "price": 2.2}, {"name": "Geranium endressii", "quantity": "360", "potSize": "P9", "price": 1.37}, {"name": "Geranium endressii 'Wargrave Pink'", "quantity": "290", "potSize": "P9", "price": 1.45}, {"name": "Geranium himalayense", "quantity": "66", "potSize": "P9", "price": 1.45}, {"name": "Geranium 'Johnson's Blue'", "quantity": "47", "potSize": "P9", "price": 1.61}, {"name": "Geranium 'Kahn'", "quantity": "2000+", "potSize": "P9", "price": 1.88}, {"name": "Geranium macr. 'Bevan's Variety'", "quantity": "1102", "potSize": "P9", "price": 1.45}, {"name": "Geranium macr. 'Czakor'", "quantity": "243", "potSize": "P9", "price": 1.45}, {"name": "Geranium magnificum 'Rosemoor'", "quantity": "57", "potSize": "P9", "price": 1.99}, {"name": "Geranium 'Orion'", "quantity": "154", "potSize": "P9", "price": 2.04}, {"name": "Geranium ox. 'Claridge Druce'", "quantity": "35", "potSize": "P9", "price": 1.52}, {"name": "Geranium ox. 'Rose Clair'", "quantity": "110", "potSize": "P9", "price": 1.52}, {"name": "Geranium 'Philippe Vapelle'", "quantity": "209", "potSize": "P9", "price": 2.14}, {"name": "Geranium Rozanne", "quantity": "185", "potSize": "P9", "price": 3.45}, {"name": "Geranium sang. 'Album'", "quantity": "24", "potSize": "P9", "price": 1.45}, {"name": "Geranium sang. 'Max Frei'", "quantity": "221", "potSize": "P9", "price": 1.45}, {"name": "Geranium 'Sirak'", "quantity": "1195", "potSize": "P9", "price": 1.82}, {"name": "Geranium sylv. 'Album'", "quantity": "82", "potSize": "P9", "price": 1.82}, {"name": "Geranium sylv. 'Mayflower'", "quantity": "72", "potSize": "P9", "price": 1.82}, {"name": "Geranium 'Tiny Monster'", "quantity": "800", "potSize": "P9", "price": 1.64}, {"name": "Geranium versicolor", "quantity": "190", "potSize": "P9", "price": 1.82}, {"name": "Geum coccineum 'Borisii'", "quantity": "651", "potSize": "P9", "price": 1.45}, {"name": "Gillenia trifoliata", "quantity": "295", "potSize": "P9", "price": 2.59}, {"name": "Gypsophila repens 'Alba'", "quantity": "140", "potSize": "P9", "price": 1.05}, {"name": "Gypsophila repens 'Rosea'", "quantity": "97", "potSize": "P9", "price": 1.05}, {"name": "Gypsophila 'Rosenschleier'", "quantity": "991", "potSize": "P9", "price": 1.51}, {"name": "Hakonechloa macra 'Aureola'", "quantity": "71", "potSize": "P9", "price": 2.75}, {"name": "Helenium aut. 'Pumilum Magnificum'", "quantity": "47", "potSize": "P9", "price": 1.69}, {"name": "Helenium 'Flammendes Kaetchen'", "quantity": "65", "potSize": "P9", "price": 2.14}, {"name": "Helenium 'Loysder Wieck'", "quantity": "48", "potSize": "P9", "price": 1.69}, {"name": "Helenium Mardi Gras", "quantity": "500", "potSize": "P9", "price": 2.52}, {"name": "Helenium 'Moerheim Beauty'", "quantity": "638", "potSize": "P9", "price": 1.66}, {"name": "Helenium 'Rubinzwerg'", "quantity": "602", "potSize": "P9", "price": 1.69}, {"name": "Helenium 'Waltraut'", "quantity": "417", "potSize": "P9", "price": 1.69}, {"name": "Helianthemum 'Amabile Plenum'", "quantity": "135", "potSize": "P9", "price": 1.45}, {"name": "Helianthemum 'Cerise Queen'", "quantity": "33", "potSize": "P9", "price": 1.45}, {"name": "Helianthemum 'Golden Queen'", "quantity": "240", "potSize": "P9", "price": 1.45}, {"name": "Helianthemum 'Henfield Brilliant'", "quantity": "91", "potSize": "P9", "price": 1.45}, {"name": "Helianthemum 'Lawrenson's Pink'", "quantity": "120", "potSize": "P9", "price": 1.45}, {"name": "Helianthemum 'Sterntaler'", "quantity": "190", "potSize": "P9", "price": 1.45}, {"name": "Helictotrichon sempervirens", "quantity": "140", "potSize": "P9", "price": 1.75}, {"name": "Heliopsis h. 'Summer Sun'", "quantity": "92", "potSize": "P9", "price": 1.37}, {"name": "Helleborus orientalis", "quantity": "691", "potSize": "P9", "price": 2.61}, {"name": "Hemerocallis 'Arctic Snow'", "quantity": "69", "potSize": "P9", "price": 2.49}, {"name": "Hemerocallis 'Aten'", "quantity": "58", "potSize": "P9", "price": 1.82}, {"name": "Hemerocallis 'Bonanza'", "quantity": "42", "potSize": "P9", "price": 1.59}, {"name": "Hemerocallis 'Gentle Shepherd'", "quantity": "85", "potSize": "P9", "price": 2.49}, {"name": "Hemerocallis 'Hyperion'", "quantity": "81", "potSize": "P9", "price": 2.2}, {"name": "Hemerocallis 'Prairie Bells'", "quantity": "47", "potSize": "P9", "price": 1.86}, {"name": "Hemerocallis 'Precious'", "quantity": "60", "potSize": "P9", "price": 1.91}, {"name": "Hemerocallis 'Stella de Oro'", "quantity": "1034", "potSize": "P9", "price": 1.74}, {"name": "Hemerocallis 'Summer Wine'", "quantity": "705", "potSize": "P9", "price": 1.82}, {"name": "Hemerocallis 'White Temptation'", "quantity": "224", "potSize": "P9", "price": 2.49}, {"name": "Hesperis matr. 'Alba'", "quantity": "28", "potSize": "P9", "price": 1.16}, {"name": "Heuchera villosa macrorrhiza", "quantity": "246", "potSize": "P9", "price": 2.01}, {"name": "Hieracium pilosella", "quantity": "30", "potSize": "P9", "price": 1.37}, {"name": "Hosta 'August Moon'", "quantity": "49", "potSize": "P9", "price": 2.2}, {"name": "Hosta 'Blue Angel'", "quantity": "55", "potSize": "P9", "price": 2.07}, {"name": "Hosta 'Blue Cadet'", "quantity": "180", "potSize": "P9", "price": 2.22}, {"name": "Hosta 'Devon Green'", "quantity": "81", "potSize": "P9", "price": 2.25}, {"name": "Hosta 'Fortunei Aureomarginata'", "quantity": "307", "potSize": "P9", "price": 1.75}, {"name": "Hosta 'Fortunei Obscura'", "quantity": "26", "potSize": "P9", "price": 1.82}, {"name": "Hosta 'Halcyon'", "quantity": "33", "potSize": "P9", "price": 1.75}, {"name": "Hosta sieb. 'Frances Williams'", "quantity": "245", "potSize": "P9", "price": 2.49}, {"name": "Houttuynia cordata 'Chameleon'", "quantity": "210", "potSize": "P9", "price": 1.53}, {"name": "Hypericum perforatum", "quantity": "101", "potSize": "P9", "price": 1.16}, {"name": "Iberis semp. 'Weisser Zwerg'", "quantity": "93", "potSize": "P9", "price": 1.37}, {"name": "Imperata cylindrica 'Red Baron'", "quantity": "2000+", "potSize": "P9", "price": 1.91}, {"name": "Inula ensifolia", "quantity": "127", "potSize": "P9", "price": 1.37}, {"name": "Iris sib. 'Blue King'", "quantity": "370", "potSize": "P9", "price": 1.69}, {"name": "Iris sib. 'Sparkling Rose'", "quantity": "466", "potSize": "P9", "price": 1.69}, {"name": "Isatis tinctoria", "quantity": "121", "potSize": "P9", "price": 1.59}, {"name": "Kalimeris incisa", "quantity": "418", "potSize": "P9", "price": 1.51}, {"name": "Kalimeris incisa 'Alba'", "quantity": "600", "potSize": "P9", "price": 1.51}, {"name": "Kalimeris incisa 'Blue Star'", "quantity": "1086", "potSize": "P9", "price": 1.51}, {"name": "Kalimeris incisa 'Madiva'", "quantity": "2000+", "potSize": "P9", "price": 1.51}, {"name": "Kirengeshoma palmata", "quantity": "85", "potSize": "P9", "price": 2.14}, {"name": "Kniphofia citrina", "quantity": "203", "potSize": "P9", "price": 1.42}, {"name": "Kniphofia uvaria", "quantity": "807", "potSize": "P9", "price": 1.37}, {"name": "Koeleria glauca", "quantity": "137", "potSize": "P9", "price": 1.23}, {"name": "Lamiastrum gal. 'Florentinum'", "quantity": "783", "potSize": "P9", "price": 1.28}, {"name": "Lamiastrum gal. 'Herman's Pride'", "quantity": "249", "potSize": "P9", "price": 1.37}, {"name": "Leontopodium alpinum", "quantity": "74", "potSize": "P9", "price": 1.16}, {"name": "Leucanthemella serotina", "quantity": "127", "potSize": "P9", "price": 1.73}, {"name": "Liatris pycnostachya", "quantity": "1088", "potSize": "P9", "price": 1.82}, {"name": "Liatris scariosa 'Alba'", "quantity": "184", "potSize": "P9", "price": 1.75}, {"name": "Liatris spicata 'Alba'", "quantity": "1302", "potSize": "P9", "price": 1.16}, {"name": "Limonium latifolium", "quantity": "489", "potSize": "P9", "price": 1.1}, {"name": "Liriope muscari 'Lilac Wonder'", "quantity": "49", "potSize": "P9", "price": 3.13}, {"name": "Lunaria annua", "quantity": "50", "potSize": "P9", "price": 1.33}, {"name": "Lupinus 'Fräulein'", "quantity": "101", "potSize": "P9", "price": 1.37}, {"name": "Luzula pilosa 'Igel'", "quantity": "34", "potSize": "P9", "price": 1.37}, {"name": "Luzula sylvatica 'Marginata'", "quantity": "64", "potSize": "P9", "price": 1.71}, {"name": "Lychnis chalcedonica", "quantity": "386", "potSize": "P9", "price": 1.14}, {"name": "Lychnis coronaria 'Alba'", "quantity": "55", "potSize": "P9", "price": 1.16}, {"name": "Lychnis flos-cuculi", "quantity": "32", "potSize": "P9", "price": 1.16}, {"name": "Lychnis viscaria 'Alba'", "quantity": "53", "potSize": "P9", "price": 1.14}, {"name": "Lychnis viscaria 'Plena'", "quantity": "262", "potSize": "P9", "price": 1.96}, {"name": "Lychnis viscaria 'Splendens'", "quantity": "263", "potSize": "P9", "price": 1.14}, {"name": "Lysimachia ciliata 'Firecracker'", "quantity": "70", "potSize": "P9", "price": 1.59}, {"name": "Lysimachia clethroides", "quantity": "860", "potSize": "P9", "price": 1.59}, {"name": "Lysimachia ephemerum", "quantity": "120", "potSize": "P9", "price": 1.59}, {"name": "Lysimachia nummularia", "quantity": "135", "potSize": "P9", "price": 1.26}, {"name": "Lysimachia punctata", "quantity": "231", "potSize": "P9", "price": 1.69}, {"name": "Lysimachia vulgaris", "quantity": "75", "potSize": "P9", "price": 1.19}, {"name": "Lythrum sal. 'Blush'", "quantity": "152", "potSize": "P9", "price": 1.59}, {"name": "Lythrum sal. 'Morden Pink'", "quantity": "658", "potSize": "P9", "price": 1.59}, {"name": "Lythrum sal. 'Robert'", "quantity": "1022", "potSize": "P9", "price": 1.59}, {"name": "Lythrum sal. 'Swirl'", "quantity": "115", "potSize": "P9", "price": 1.59}, {"name": "Macleaya m. 'Kelway's Coral Plume'", "quantity": "40", "potSize": "P9", "price": 2.14}, {"name": "Matteuccia struthiopteris", "quantity": "499", "potSize": "P9", "price": 1.64}, {"name": "Mazus reptans", "quantity": "64", "potSize": "P9", "price": 1.37}, {"name": "Melica ciliata", "quantity": "1120", "potSize": "P9", "price": 1.59}, {"name": "Melissa officinalis", "quantity": "62", "potSize": "P9", "price": 1.16}, {"name": "Mentha longifolia", "quantity": "345", "potSize": "P9", "price": 1.43}, {"name": "Mentha pulegium", "quantity": "241", "potSize": "P9", "price": 1.23}, {"name": "Miscanthus giganteus", "quantity": "42", "potSize": "P9", "price": 2.18}, {"name": "Miscanthus sin. 'Flamingo'", "quantity": "126", "potSize": "P9", "price": 2.18}, {"name": "Miscanthus sin. 'Ghana'", "quantity": "72", "potSize": "P9", "price": 2.18}, {"name": "Miscanthus sin. 'Gracillimus'", "quantity": "862", "potSize": "P9", "price": 2.18}, {"name": "Miscanthus sin. 'Graziella'", "quantity": "236", "potSize": "P9", "price": 2.18}, {"name": "Miscanthus sin. 'Kleine Fontäne'", "quantity": "100", "potSize": "P9", "price": 2.18}, {"name": "Miscanthus sin. 'Kleine Silbersp.'", "quantity": "59", "potSize": "P9", "price": 2.18}, {"name": "Miscanthus sin. 'Morning Light'", "quantity": "150", "potSize": "P9", "price": 2.18}, {"name": "Miscanthus sin. 'Silberfeder'", "quantity": "44", "potSize": "P9", "price": 2.18}, {"name": "Miscanthus sin. 'Silberspinne'", "quantity": "236", "potSize": "P9", "price": 2.18}, {"name": "Miscanthus sin. 'Yaku Jima'", "quantity": "209", "potSize": "P9", "price": 2.18}, {"name": "Miscanthus sin. 'Zebrinus'", "quantity": "96", "potSize": "P9", "price": 2.18}, {"name": "Molinia arund. 'Karl Foerster'", "quantity": "94", "potSize": "P9", "price": 1.74}, {"name": "Molinia arund. 'Skyracer'", "quantity": "126", "potSize": "P9", "price": 1.74}, {"name": "Molinia arund. 'Windspiel'", "quantity": "135", "potSize": "P9", "price": 1.74}, {"name": "Molinia caerulea 'Edith Dudszus'", "quantity": "235", "potSize": "P9", "price": 1.54}, {"name": "Molinia caerulea 'Heidebraut'", "quantity": "2000+", "potSize": "P9", "price": 1.54}, {"name": "Molinia caerulea 'Heidezwerg'", "quantity": "247", "potSize": "P9", "price": 1.54}, {"name": "Molinia caerulea 'Moorflamme'", "quantity": "77", "potSize": "P9", "price": 1.54}, {"name": "Molinia caerulea 'Moorhexe'", "quantity": "1085", "potSize": "P9", "price": 1.54}, {"name": "Molinia caerulea 'Tepper'", "quantity": "980", "potSize": "P9", "price": 1.54}, {"name": "Monarda bradburiana", "quantity": "210", "potSize": "P9", "price": 1.72}, {"name": "Monarda 'Fireball'", "quantity": "149", "potSize": "P9", "price": 1.88}, {"name": "Monarda fistulosa", "quantity": "448", "potSize": "P9", "price": 1.41}, {"name": "Monarda 'Gardenview Scarlet'", "quantity": "164", "potSize": "P9", "price": 1.41}, {"name": "Monarda 'Mahogany'", "quantity": "206", "potSize": "P9", "price": 1.41}, {"name": "Monarda 'Marshall's Delight'", "quantity": "111", "potSize": "P9", "price": 1.41}, {"name": "Monarda punctata", "quantity": "96", "potSize": "P9", "price": 1.41}, {"name": "Monarda 'Scorpion'", "quantity": "155", "potSize": "P9", "price": 1.41}, {"name": "Nepeta grandiflora 'Dawn to Dusk'", "quantity": "87", "potSize": "P9", "price": 1.52}, {"name": "Nepeta grandiflora 'Wild Cat'", "quantity": "830", "potSize": "P9", "price": 1.52}, {"name": "Nepeta 'Grol'", "quantity": "2000+", "potSize": "P9", "price": 1.37}, {"name": "Nepeta 'Kit Cat'", "quantity": "420", "potSize": "P9", "price": 1.54}, {"name": "Nepeta nervosa", "quantity": "265", "potSize": "P9", "price": 1.37}, {"name": "Nepeta racemosa", "quantity": "355", "potSize": "P9", "price": 1.16}, {"name": "Nepeta racemosa 'Grog'", "quantity": "771", "potSize": "P9", "price": 1.38}, {"name": "Nepeta racemosa 'Snowflake'", "quantity": "168", "potSize": "P9", "price": 1.37}, {"name": "Nepeta sibirica", "quantity": "192", "potSize": "P9", "price": 1.6}, {"name": "Nepeta 'Six Hills Giant'", "quantity": "740", "potSize": "P9", "price": 1.37}, {"name": "Nepeta subsessilis", "quantity": "316", "potSize": "P9", "price": 1.6}, {"name": "Nepeta 'Walker's Low'", "quantity": "2000+", "potSize": "P9", "price": 1.37}, {"name": "Oenothera fr. 'Fyrverkeri'", "quantity": "298", "potSize": "P9", "price": 1.51}, {"name": "Oenothera fr. 'Sonnenwende'", "quantity": "118", "potSize": "P9", "price": 1.51}, {"name": "Oenothera macrocarpa", "quantity": "256", "potSize": "P9", "price": 1.45}, {"name": "Omphalodes verna", "quantity": "80", "potSize": "P9", "price": 1.75}, {"name": "Onoclea sensibilis", "quantity": "96", "potSize": "P9", "price": 1.84}, {"name": "Ononis spinosa", "quantity": "100", "potSize": "P9", "price": 1.59}, {"name": "Onopordum nervosum (On.acanthium)", "quantity": "42", "potSize": "P9", "price": 1.75}, {"name": "Ophiopogon jap. 'Minor'", "quantity": "115", "potSize": "P9", "price": 2.59}, {"name": "Ophiopogon japonicus", "quantity": "39", "potSize": "P9", "price": 2.59}, {"name": "Ophiopogon planiscapus", "quantity": "29", "potSize": "P9", "price": 2.59}, {"name": "Origanum laevigatum 'Herrenhausen'", "quantity": "1357", "potSize": "P9", "price": 1.45}, {"name": "Origanum 'Rosenkuppel'", "quantity": "370", "potSize": "P9", "price": 1.45}, {"name": "Origanum vulg. 'Aureum'", "quantity": "104", "potSize": "P9", "price": 1.41}, {"name": "Origanum vulg. 'Compactum'", "quantity": "1768", "potSize": "P9", "price": 1.37}, {"name": "Osmunda regalis", "quantity": "203", "potSize": "P9", "price": 2.1}, {"name": "Pachysandra term. 'Green Carpet'", "quantity": "717", "potSize": "P9", "price": 1.28}, {"name": "Pachysandra terminalis", "quantity": "2000+", "potSize": "P9", "price": 1.17}, {"name": "Paeonia (LD) 'Duchesse de Nemours'", "quantity": "52", "potSize": "P9", "price": 3.84}, {"name": "Panicum amarum 'Dewey Blue'", "quantity": "46", "potSize": "P9", "price": 2.15}, {"name": "Panicum virgatum", "quantity": "222", "potSize": "P9", "price": 1.62}, {"name": "Panicum virgatum 'Dallas Blues'", "quantity": "85", "potSize": "P9", "price": 1.78}, {"name": "Panicum virgatum 'Heiliger Hain'", "quantity": "72", "potSize": "P9", "price": 1.75}, {"name": "Panicum virgatum 'Kupferhirse'", "quantity": "250", "potSize": "P9", "price": 1.69}, {"name": "Panicum virgatum 'Northwind'", "quantity": "31", "potSize": "P9", "price": 1.78}, {"name": "Panicum virgatum 'Prairie Sky'", "quantity": "268", "potSize": "P9", "price": 1.78}, {"name": "Panicum virgatum 'Rehbraun'", "quantity": "1174", "potSize": "P9", "price": 1.69}, {"name": "Panicum virgatum 'Sangria'", "quantity": "56", "potSize": "P9", "price": 2.26}, {"name": "Panicum virgatum 'Shenandoah'", "quantity": "920", "potSize": "P9", "price": 1.69}, {"name": "Panicum virgatum 'Squaw'", "quantity": "48", "potSize": "P9", "price": 1.69}, {"name": "Panicum virgatum 'Strictum'", "quantity": "369", "potSize": "P9", "price": 1.69}, {"name": "Panicum virgatum 'Warrior'", "quantity": "188", "potSize": "P9", "price": 1.69}, {"name": "Papaver or. 'Royal Wedding'", "quantity": "68", "potSize": "P9", "price": 1.37}, {"name": "Patrinia monandra", "quantity": "807", "potSize": "P9", "price": 2.97}, {"name": "Pennisetum al. 'Cassian'", "quantity": "296", "potSize": "P9", "price": 1.63}, {"name": "Pennisetum al. 'Hameln'", "quantity": "2000+", "potSize": "P9", "price": 1.38}, {"name": "Pennisetum al. 'Little Bunny'", "quantity": "2000+", "potSize": "P9", "price": 1.63}, {"name": "Pennisetum al. 'Redhead'", "quantity": "912", "potSize": "P9", "price": 1.8}, {"name": "Pennisetum alop. viridescens", "quantity": "1140", "potSize": "P9", "price": 1.6}, {"name": "Pennisetum alopecuroides", "quantity": "1982", "potSize": "P9", "price": 1.38}, {"name": "Pennisetum 'Karley Rose'", "quantity": "185", "potSize": "P9", "price": 2.23}, {"name": "Pennisetum or. 'Tall Tails'", "quantity": "24", "potSize": "P9", "price": 1.88}, {"name": "Penstemon 'Andenken an F. Hahn'", "quantity": "936", "potSize": "P9", "price": 1.59}, {"name": "Penstemon b. 'Coccineus'", "quantity": "218", "potSize": "P9", "price": 1.28}, {"name": "Penstemon digit. 'Husker Red'", "quantity": "450", "potSize": "P9", "price": 1.4}, {"name": "Penstemon hirsutus 'Pygmaeus'", "quantity": "120", "potSize": "P9", "price": 1.45}, {"name": "Penstemon 'Purple Passion'", "quantity": "59", "potSize": "P9", "price": 1.59}, {"name": "Penstemon strictus", "quantity": "148", "potSize": "P9", "price": 1.73}, {"name": "Persicaria a. 'Blackfield'", "quantity": "158", "potSize": "P9", "price": 3.02}, {"name": "Persicaria a. 'Fat Domino'", "quantity": "361", "potSize": "P9", "price": 2.89}, {"name": "Persicaria a. 'Golden Arrow'", "quantity": "120", "potSize": "P9", "price": 3.02}, {"name": "Persicaria a. 'Lisan'", "quantity": "2000+", "potSize": "P9", "price": 2.32}, {"name": "Persicaria a. 'Rosea'", "quantity": "307", "potSize": "P9", "price": 2.46}, {"name": "Persicaria a. 'Taurus'", "quantity": "50", "potSize": "P9", "price": 2.46}, {"name": "Persicaria aff. 'Darjeeling Red'", "quantity": "343", "potSize": "P9", "price": 1.37}, {"name": "Persicaria aff. 'Superba'", "quantity": "545", "potSize": "P9", "price": 1.37}, {"name": "Persicaria amplexicaulis", "quantity": "2000+", "potSize": "P9", "price": 2.32}, {"name": "Persicaria filiformis", "quantity": "140", "potSize": "P9", "price": 1.74}, {"name": "Petasites hybridus", "quantity": "33", "potSize": "P9", "price": 1.59}, {"name": "Peucedanum verticillare", "quantity": "152", "potSize": "P9", "price": 2.44}, {"name": "Phlomis russeliana", "quantity": "2000+", "potSize": "P9", "price": 1.6}, {"name": "Phlox (M) 'Alpha'", "quantity": "180", "potSize": "P9", "price": 1.52}, {"name": "Phlox (M) 'Omega'", "quantity": "119", "potSize": "P9", "price": 1.52}, {"name": "Phlox (P) 'Blue Boy'", "quantity": "280", "potSize": "P9", "price": 1.45}, {"name": "Phlox (P) 'Casablanca'", "quantity": "315", "potSize": "P9", "price": 1.45}, {"name": "Phlox (P) 'Fujiyama'", "quantity": "192", "potSize": "P9", "price": 1.45}, {"name": "Phlox (P) 'Kirchenfürst'", "quantity": "248", "potSize": "P9", "price": 1.45}, {"name": "Phlox (P) 'Laura'", "quantity": "254", "potSize": "P9", "price": 1.45}, {"name": "Phlox (P) 'Lilac Time'", "quantity": "85", "potSize": "P9", "price": 1.45}, {"name": "Phlox (P) 'Orange Perfection'", "quantity": "370", "potSize": "P9", "price": 1.45}, {"name": "Phlox (P) 'Rembrandt'", "quantity": "142", "potSize": "P9", "price": 1.45}, {"name": "Phlox (P) 'Rijnstroom'", "quantity": "289", "potSize": "P9", "price": 1.45}, {"name": "Phlox (P) 'Starfire'", "quantity": "574", "potSize": "P9", "price": 1.45}, {"name": "Phlox (P) 'Tenor'", "quantity": "190", "potSize": "P9", "price": 1.45}, {"name": "Phlox (P) 'White Admiral'", "quantity": "140", "potSize": "P9", "price": 1.45}, {"name": "Phlox (S) 'Atropurpurea'", "quantity": "147", "potSize": "P9", "price": 1.37}, {"name": "Phlox (S) 'Bavaria'", "quantity": "152", "potSize": "P9", "price": 1.37}, {"name": "Phlox (S) 'Emerald Cushion Blue'", "quantity": "61", "potSize": "P9", "price": 1.37}, {"name": "Phlox (S) 'G.F. Wilson'", "quantity": "161", "potSize": "P9", "price": 1.37}, {"name": "Phlox (S) 'Scarlet Flame'", "quantity": "240", "potSize": "P9", "price": 1.37}, {"name": "Phlox (S) 'White Delight'", "quantity": "150", "potSize": "P9", "price": 1.37}, {"name": "Phlox stolon. 'Blue Ridge'", "quantity": "56", "potSize": "P9", "price": 1.45}, {"name": "Physostegia v. 'Summer Snow'", "quantity": "844", "potSize": "P9", "price": 1.41}, {"name": "Polemonium caeruleum", "quantity": "159", "potSize": "P9", "price": 1.16}, {"name": "Polemonium reptans", "quantity": "78", "potSize": "P9", "price": 1.28}, {"name": "Polemonium yezoense Bress. Purple", "quantity": "182", "potSize": "P9", "price": 2.93}, {"name": "Polypodium vulgare", "quantity": "39", "potSize": "P9", "price": 1.84}, {"name": "Polystichum aculeatum", "quantity": "53", "potSize": "P9", "price": 1.84}, {"name": "Polystichum braunii", "quantity": "90", "potSize": "P9", "price": 1.84}, {"name": "Polystichum polyblepharum", "quantity": "184", "potSize": "P9", "price": 1.84}, {"name": "Polystichum set. 'Herrenhausen'", "quantity": "248", "potSize": "P9", "price": 1.84}, {"name": "Polystichum tsussimense", "quantity": "74", "potSize": "P9", "price": 1.84}, {"name": "Potentilla atrosanguinea", "quantity": "109", "potSize": "P9", "price": 1.28}, {"name": "Potentilla megalantha", "quantity": "80", "potSize": "P9", "price": 1.11}, {"name": "Potentilla nep. 'Miss Willmott'", "quantity": "58", "potSize": "P9", "price": 1.16}, {"name": "Potentilla tridentata 'Nuuk'", "quantity": "192", "potSize": "P9", "price": 1.64}, {"name": "Prunella grand. 'Alba'", "quantity": "104", "potSize": "P9", "price": 1.28}, {"name": "Prunella grand. 'Rubra'", "quantity": "153", "potSize": "P9", "price": 1.37}, {"name": "Prunella grandiflora", "quantity": "105", "potSize": "P9", "price": 1.28}, {"name": "Prunella w. 'Gruss Aus Isernhagen'", "quantity": "136", "potSize": "P9", "price": 1.47}, {"name": "Prunella w. 'Rosea'", "quantity": "68", "potSize": "P9", "price": 1.59}, {"name": "Pulsatilla v. 'Alba'", "quantity": "709", "potSize": "P9", "price": 1.37}, {"name": "Pulsatilla v. 'Röde Klokke'", "quantity": "1993", "potSize": "P9", "price": 1.37}, {"name": "Pulsatilla vulgaris", "quantity": "80", "potSize": "P9", "price": 1.37}, {"name": "Pycnanthemum flexuosum (tenuifolium)", "quantity": "596", "potSize": "P9", "price": 1.73}, {"name": "Pycnanthemum muticum", "quantity": "1680", "potSize": "P9", "price": 1.73}, {"name": "Pycnanthemum pilosum", "quantity": "1214", "potSize": "P9", "price": 1.73}, {"name": "Ranunculus acris 'Multiplex'", "quantity": "229", "potSize": "P9", "price": 1.82}, {"name": "Ratibida columnifera pulcherrima", "quantity": "50", "potSize": "P9", "price": 1.82}, {"name": "Ratibida pinnata", "quantity": "104", "potSize": "P9", "price": 1.82}, {"name": "Rheum palmatum tanguticum", "quantity": "200", "potSize": "P9", "price": 1.91}, {"name": "Rodgersia podophylla 'Braunlaub'", "quantity": "189", "potSize": "P9", "price": 4.45}, {"name": "Rudbeckia f. 'Goldsturm'", "quantity": "2000+", "potSize": "P9", "price": 1.37}, {"name": "Rudbeckia fulgida deamii", "quantity": "654", "potSize": "P9", "price": 1.37}, {"name": "Rudbeckia fulgida fulgida", "quantity": "202", "potSize": "P9", "price": 1.37}, {"name": "Rudbeckia fulgida speciosa", "quantity": "362", "potSize": "P9", "price": 1.37}, {"name": "Rudbeckia hirta 'Prairie Sun'", "quantity": "90", "potSize": "P9", "price": 1.82}, {"name": "Rudbeckia laciniata 'Goldquelle'", "quantity": "200", "potSize": "P9", "price": 1.86}, {"name": "Rudbeckia maxima", "quantity": "127", "potSize": "P9", "price": 1.91}, {"name": "Rudbeckia missouriensis", "quantity": "50", "potSize": "P9", "price": 1.37}, {"name": "Rudbeckia nitida 'Herbstsonne'", "quantity": "78", "potSize": "P9", "price": 1.91}, {"name": "Rudbeckia occidentalis", "quantity": "272", "potSize": "P9", "price": 1.37}, {"name": "Rudbeckia paniculata", "quantity": "380", "potSize": "P9", "price": 1.37}, {"name": "Rudbeckia subt. 'Henry Eilers'", "quantity": "102", "potSize": "P9", "price": 2.52}, {"name": "Rudbeckia triloba", "quantity": "136", "potSize": "P9", "price": 1.6}, {"name": "Rumex acetosa", "quantity": "164", "potSize": "P9", "price": 1.14}, {"name": "Ruta graveolens", "quantity": "25", "potSize": "P9", "price": 1.28}, {"name": "Salvia nemorosa", "quantity": "37", "potSize": "P9", "price": 1.16}, {"name": "Salvia nemorosa 'Amethyst'", "quantity": "24", "potSize": "P9", "price": 1.6}, {"name": "Salvia nemorosa 'Blauhügel'", "quantity": "260", "potSize": "P9", "price": 1.53}, {"name": "Salvia nemorosa 'Blaukönigin'", "quantity": "89", "potSize": "P9", "price": 1.16}, {"name": "Salvia nemorosa 'Caradonna'", "quantity": "2000+", "potSize": "P9", "price": 1.57}, {"name": "Salvia nemorosa 'Lubeca'", "quantity": "134", "potSize": "P9", "price": 1.82}, {"name": "Salvia nemorosa 'Mainacht'", "quantity": "2000+", "potSize": "P9", "price": 1.57}, {"name": "Salvia nemorosa 'Ostfriesland'", "quantity": "2000+", "potSize": "P9", "price": 1.37}, {"name": "Salvia nemorosa 'Rose Queen'", "quantity": "52", "potSize": "P9", "price": 1.23}, {"name": "Salvia nemorosa 'Schneehügel'", "quantity": "756", "potSize": "P9", "price": 1.4}, {"name": "Salvia nemorosa Sensation Deep Blue", "quantity": "359", "potSize": "P9", "price": 1.65}, {"name": "Salvia nemorosa 'Viola Klose'", "quantity": "498", "potSize": "P9", "price": 1.82}, {"name": "Salvia off. 'Purpurascens'", "quantity": "103", "potSize": "P9", "price": 1.67}, {"name": "Salvia verticillata 'Purple Rain'", "quantity": "376", "potSize": "P9", "price": 1.75}, {"name": "Sanguisorba obtusa", "quantity": "246", "potSize": "P9", "price": 2.06}, {"name": "Sanguisorba tenuifolia alba", "quantity": "85", "potSize": "P9", "price": 2.9}, {"name": "Santolina chamaecyparissus", "quantity": "235", "potSize": "P9", "price": 1.45}, {"name": "Saponaria lempergii 'Max Frei'", "quantity": "36", "potSize": "P9", "price": 1.96}, {"name": "Saponaria ocymoides", "quantity": "125", "potSize": "P9", "price": 1.16}, {"name": "Saponaria officinalis", "quantity": "402", "potSize": "P9", "price": 1.54}, {"name": "Saponaria officinalis 'Rosea Plena'", "quantity": "236", "potSize": "P9", "price": 1.75}, {"name": "Satureja montana", "quantity": "179", "potSize": "P9", "price": 1.16}, {"name": "Scabiosa col. 'Butterfly Blue'", "quantity": "1267", "potSize": "P9", "price": 1.82}, {"name": "Scabiosa col. 'Pink Mist'", "quantity": "812", "potSize": "P9", "price": 1.82}, {"name": "Scabiosa ochroleuca", "quantity": "114", "potSize": "P9", "price": 1.45}, {"name": "Schizachyrium sc. 'Caïro'", "quantity": "190", "potSize": "P9", "price": 2.41}, {"name": "Schizachyrium scop. 'Wildwest'", "quantity": "1600", "potSize": "P9", "price": 2.04}, {"name": "Schizachyrium scoparium (Andropogon scop.)", "quantity": "128", "potSize": "P9", "price": 2.04}, {"name": "Scutellaria incana", "quantity": "113", "potSize": "P9", "price": 1.91}, {"name": "Sedum album 'Coral Carpet'", "quantity": "61", "potSize": "P9", "price": 1.23}, {"name": "Sedum album 'Murale'", "quantity": "103", "potSize": "P9", "price": 1.23}, {"name": "Sedum 'Carl'", "quantity": "557", "potSize": "P9", "price": 1.59}, {"name": "Sedum cauticola 'Lidakense'", "quantity": "293", "potSize": "P9", "price": 1.3}, {"name": "Sedum flor. 'Weihenstephaner Gold'", "quantity": "359", "potSize": "P9", "price": 1.21}, {"name": "Sedum 'Herbstfreude'", "quantity": "2000+", "potSize": "P9", "price": 1.37}, {"name": "Sedum hybridum 'Immergrünchen'", "quantity": "360", "potSize": "P9", "price": 1.21}, {"name": "Sedum 'Joyce Henderson'", "quantity": "572", "potSize": "P9", "price": 1.59}, {"name": "Sedum kamtschaticum", "quantity": "106", "potSize": "P9", "price": 1.21}, {"name": "Sedum 'Matrona'", "quantity": "1539", "potSize": "P9", "price": 1.59}, {"name": "Sedum reflexum", "quantity": "220", "potSize": "P9", "price": 1.21}, {"name": "Sedum spectabile 'Brillant'", "quantity": "1883", "potSize": "P9", "price": 1.37}, {"name": "Sedum spectabile 'Rosenteller'", "quantity": "66", "potSize": "P9", "price": 1.59}, {"name": "Sedum spectabile 'Stardust'", "quantity": "228", "potSize": "P9", "price": 1.59}, {"name": "Sedum spurium", "quantity": "58", "potSize": "P9", "price": 1.21}, {"name": "Sedum spurium 'Fuldaglut'", "quantity": "68", "potSize": "P9", "price": 1.21}, {"name": "Sedum spurium 'Schorbuser Blut'", "quantity": "81", "potSize": "P9", "price": 1.21}, {"name": "Sedum spurium 'Variegatum'", "quantity": "232", "potSize": "P9", "price": 1.21}, {"name": "Sedum 'Xenox'", "quantity": "161", "potSize": "P9", "price": 2.11}, {"name": "Sesleria autumnalis", "quantity": "2000+", "potSize": "P9", "price": 1.63}, {"name": "Sesleria caerulea", "quantity": "67", "potSize": "P9", "price": 1.53}, {"name": "Sidalcea candida 'Bianca'", "quantity": "61", "potSize": "P9", "price": 1.82}, {"name": "Silene baccifera (Cucubalus baccifer)", "quantity": "100", "potSize": "P9", "price": 1.45}, {"name": "Silene dioica", "quantity": "142", "potSize": "P9", "price": 1.37}, {"name": "Silene nutans", "quantity": "318", "potSize": "P9", "price": 1.51}, {"name": "Silene schafta", "quantity": "75", "potSize": "P9", "price": 1.16}, {"name": "Silene u. 'Weisskehlchen'", "quantity": "82", "potSize": "P9", "price": 1.37}, {"name": "Silphium perfoliatum", "quantity": "168", "potSize": "P9", "price": 2.09}, {"name": "Sisyrinchium angustifolium", "quantity": "150", "potSize": "P9", "price": 1.52}, {"name": "Smilacina racemosa", "quantity": "240", "potSize": "P9", "price": 3.07}, {"name": "Solidago flex. 'Flexi Belle'", "quantity": "280", "potSize": "P9", "price": 1.63}, {"name": "Solidago 'Golden Dwarf'", "quantity": "156", "potSize": "P9", "price": 1.44}, {"name": "Solidago 'Golden Mosa'", "quantity": "182", "potSize": "P9", "price": 1.45}, {"name": "Solidago rigida", "quantity": "215", "potSize": "P9", "price": 1.31}, {"name": "Solidago rugosa 'Fireworks'", "quantity": "580", "potSize": "P9", "price": 1.75}, {"name": "Solidago 'Strahlenkrone'", "quantity": "93", "potSize": "P9", "price": 1.45}, {"name": "Solidaster luteus", "quantity": "948", "potSize": "P9", "price": 1.51}, {"name": "Sorghastrum nutans 'Indian Steel'", "quantity": "180", "potSize": "P9", "price": 2.07}, {"name": "Spodiopogon sibiricus", "quantity": "167", "potSize": "P9", "price": 1.96}, {"name": "Sporobolus heterolepis", "quantity": "2000+", "potSize": "P9", "price": 1.91}, {"name": "Stachys byzantina", "quantity": "111", "potSize": "P9", "price": 1.16}, {"name": "Stachys byzantina 'Big Ears'", "quantity": "35", "potSize": "P9", "price": 1.69}, {"name": "Stachys byzantina 'Cotton Boll'", "quantity": "283", "potSize": "P9", "price": 1.69}, {"name": "Stachys macrantha (grandiflora)", "quantity": "33", "potSize": "P9", "price": 1.45}, {"name": "Stachys off. 'Pinky'", "quantity": "133", "potSize": "P9", "price": 1.64}, {"name": "Stachys off. 'Rosea'", "quantity": "57", "potSize": "P9", "price": 1.59}, {"name": "Stipa pennata", "quantity": "24", "potSize": "P9", "price": 2.14}, {"name": "Stipa tenuissima", "quantity": "482", "potSize": "P9", "price": 1.73}, {"name": "Stokesia laevis", "quantity": "86", "potSize": "P9", "price": 2.14}, {"name": "Succisa pratensis", "quantity": "94", "potSize": "P9", "price": 1.31}, {"name": "Succisella infl. 'Frosted Pearls'", "quantity": "80", "potSize": "P9", "price": 1.82}, {"name": "Symphytum azureum", "quantity": "682", "potSize": "P9", "price": 1.82}, {"name": "Symphytum grand. 'Wisley Blue'", "quantity": "852", "potSize": "P9", "price": 1.45}, {"name": "Symphytum grandiflorum", "quantity": "34", "potSize": "P9", "price": 1.45}, {"name": "Tanacetum (C) 'Rob. Red'", "quantity": "273", "potSize": "P9", "price": 1.05}, {"name": "Tanacetum (C) 'Rob. Rose'", "quantity": "159", "potSize": "P9", "price": 1.05}, {"name": "Tellima grandiflora", "quantity": "298", "potSize": "P9", "price": 1.23}, {"name": "Teucrium hyrcanicum", "quantity": "154", "potSize": "P9", "price": 1.73}, {"name": "Teucrium lucidrys", "quantity": "358", "potSize": "P9", "price": 1.45}, {"name": "Thalictrum aquilegifolium", "quantity": "170", "potSize": "P9", "price": 1.45}, {"name": "Thalictrum del. 'Hewitt's Double'", "quantity": "66", "potSize": "P9", "price": 2.88}, {"name": "Thalictrum flavum glaucum", "quantity": "114", "potSize": "P9", "price": 1.52}, {"name": "Thalictrum rochebrunianum", "quantity": "450", "potSize": "P9", "price": 1.75}, {"name": "Thymus citriod. 'Aureus'", "quantity": "55", "potSize": "P9", "price": 1.37}, {"name": "Thymus citriod. 'Bertram Anderson'", "quantity": "111", "potSize": "P9", "price": 1.37}, {"name": "Thymus 'Doone Valley'", "quantity": "37", "potSize": "P9", "price": 1.37}, {"name": "Thymus praecox 'Pink Chintz'", "quantity": "186", "potSize": "P9", "price": 1.37}, {"name": "Thymus praecox 'Pseudolanuginosus'", "quantity": "166", "potSize": "P9", "price": 1.37}, {"name": "Thymus v. 'Compactus'", "quantity": "137", "potSize": "P9", "price": 1.45}, {"name": "Trachystemon orientalis", "quantity": "1751", "potSize": "P9", "price": 2.04}, {"name": "Tradescantia (A) 'Innocence'", "quantity": "50", "potSize": "P9", "price": 1.52}, {"name": "Tradescantia (A) 'Leonora'", "quantity": "275", "potSize": "P9", "price": 1.52}, {"name": "Tradescantia (A) 'Rubra'", "quantity": "190", "potSize": "P9", "price": 1.52}, {"name": "Tradescantia (A) 'Zwanenburg Blue'", "quantity": "96", "potSize": "P9", "price": 1.59}, {"name": "Tricyrtis hirta", "quantity": "280", "potSize": "P9", "price": 1.55}, {"name": "Trifolium rubens", "quantity": "125", "potSize": "P9", "price": 1.53}, {"name": "Trollius chinensis 'Golden Queen'", "quantity": "517", "potSize": "P9", "price": 1.47}, {"name": "Trollius europaeus", "quantity": "62", "potSize": "P9", "price": 1.47}, {"name": "Trollius 'Lemon Queen'", "quantity": "167", "potSize": "P9", "price": 2.97}, {"name": "Verbascum nigrum album", "quantity": "95", "potSize": "P9", "price": 1.37}, {"name": "Verbascum olympicum", "quantity": "105", "potSize": "P9", "price": 1.24}, {"name": "Verbascum phoenic. 'Violetta'", "quantity": "48", "potSize": "P9", "price": 1.37}, {"name": "Verbascum phoeniceum", "quantity": "140", "potSize": "P9", "price": 1.37}, {"name": "Verbena bon. 'Lollipop'", "quantity": "472", "potSize": "P9", "price": 1.74}, {"name": "Vernonia baldwinii", "quantity": "172", "potSize": "P9", "price": 2.27}, {"name": "Veronica austr. 'Knallblau'", "quantity": "1054", "potSize": "P9", "price": 1.45}, {"name": "Veronica austr. 'Shirley Blue'", "quantity": "400", "potSize": "P9", "price": 1.45}, {"name": "Veronica 'Eveline'", "quantity": "71", "potSize": "P9", "price": 1.52}, {"name": "Veronica longif. 'Blauriesin'", "quantity": "336", "potSize": "P9", "price": 1.41}, {"name": "Veronica longif. 'First Glory'", "quantity": "275", "potSize": "P9", "price": 1.59}, {"name": "Veronica longif. 'Schneeriesin'", "quantity": "246", "potSize": "P9", "price": 1.41}, {"name": "Veronica 'Madame Mercier'", "quantity": "373", "potSize": "P9", "price": 1.52}, {"name": "Veronica prostrata", "quantity": "69", "potSize": "P9", "price": 1.28}, {"name": "Veronica spic. 'Icicle'", "quantity": "381", "potSize": "P9", "price": 1.52}, {"name": "Veronica spicata", "quantity": "131", "potSize": "P9", "price": 1.23}, {"name": "Veronica spicata incana", "quantity": "100", "potSize": "P9", "price": 1.37}, {"name": "Veronica spicata 'Rotfuchs'", "quantity": "458", "potSize": "P9", "price": 1.52}, {"name": "Veronica 'Sunny Border Blue'", "quantity": "1004", "potSize": "P9", "price": 1.58}, {"name": "Veronicastrum virg. 'Adoration'", "quantity": "280", "potSize": "P9", "price": 2.25}, {"name": "Veronicastrum virg. 'Album'", "quantity": "420", "potSize": "P9", "price": 1.78}, {"name": "Veronicastrum virg. 'Fascination'", "quantity": "1137", "potSize": "P9", "price": 2.06}, {"name": "Veronicastrum virg. 'Lavendelturm'", "quantity": "341", "potSize": "P9", "price": 2.06}, {"name": "Veronicastrum virg. 'Pink Glow'", "quantity": "229", "potSize": "P9", "price": 1.97}, {"name": "Veronicastrum virg. 'Red Arrows'", "quantity": "132", "potSize": "P9", "price": 2.06}, {"name": "Veronicastrum virg. 'Roseum'", "quantity": "58", "potSize": "P9", "price": 1.78}, {"name": "Vinca major", "quantity": "1023", "potSize": "P9", "price": 1.37}, {"name": "Vinca major 'Variegata'", "quantity": "66", "potSize": "P9", "price": 1.37}, {"name": "Vinca minor 'Aureovariegata'", "quantity": "48", "potSize": "P9", "price": 1.4}, {"name": "Vinca minor 'La Grave'", "quantity": "891", "potSize": "P9", "price": 1.37}, {"name": "Viola labradorica", "quantity": "268", "potSize": "P9", "price": 1.37}, {"name": "Viola sororia", "quantity": "261", "potSize": "P9", "price": 1.28}, {"name": "Waldsteinia geoides", "quantity": "130", "potSize": "P9", "price": 1.37}, {"name": "Waldsteinia ternata", "quantity": "438", "potSize": "P9", "price": 1.16}];
+        const BUILTIN_PRODUCTS = []; // Ingebakken lijst verwijderd — gebruik Excel upload
 
-        let currentProducts = [...BUILTIN_PRODUCTS];
+        let currentProducts = [];
         let notes = [];
-        let cart = []; // [{name, potSize, price, qty}]
+        let cart = [];
         let selectedProduct = null;
-        let usingBuiltin = true;
+        let usingBuiltin = false;
 
         // ── Datum helpers ───────────────────────────────────────────────
         function extractDateFromFilename(filename) {
@@ -319,28 +378,27 @@
 
         // ── Opslaan / laden ─────────────────────────────────────────────
         function saveData() {
-            if (!usingBuiltin) localStorage.setItem('lageschaarProducts', JSON.stringify(currentProducts));
-            localStorage.setItem('lageschaarNotes', JSON.stringify(notes));
-            localStorage.setItem('lageschaarCart', JSON.stringify(cart));
+            // Productenlijst wordt NIET in localStorage opgeslagen (te groot)
+            // Notes en cart wel
+            try { localStorage.setItem('lageschaarNotes', JSON.stringify(notes)); } catch(e) {}
+            try { localStorage.setItem('lageschaarCart', JSON.stringify(cart)); } catch(e) {}
         }
 
         function loadData() {
-            const savedDatum    = localStorage.getItem('lageschaarLijstDatum');
-            const savedProducts = localStorage.getItem('lageschaarProducts');
-            const savedNotes    = localStorage.getItem('lageschaarNotes');
-            const savedCart     = localStorage.getItem('lageschaarCart');
+            const savedDatum = localStorage.getItem('lageschaarLijstDatum');
+            const savedNotes = localStorage.getItem('lageschaarNotes');
+            const savedCart  = localStorage.getItem('lageschaarCart');
+            // Verwijder eventueel oude opgeslagen productenlijst om ruimte vrij te maken
+            try { localStorage.removeItem('lageschaarProducts'); } catch(e) {}
 
             if (savedDatum) updateHeaderDatum(savedDatum);
 
-            if (savedProducts) {
-                currentProducts = JSON.parse(savedProducts);
-                usingBuiltin = false;
-                showToast(`✓ ${currentProducts.length} planten geladen`, '#1565c0');
-            } else {
-                showToast(`✓ ${currentProducts.length} planten (ingebakken)`, '#1565c0');
+            // Geen ingebakken lijst meer — wacht op Excel upload
+            if (currentProducts.length === 0) {
+                // toon lege staat, renderProducts handelt dit af
             }
 
-            document.getElementById('product-count-header').textContent = `${currentProducts.length} soorten`;
+            document.getElementById('product-count-header').textContent = currentProducts.length > 0 ? `${currentProducts.length} soorten` : 'Upload een Excel-lijst';
             renderProducts();
 
             if (savedNotes) { notes = JSON.parse(savedNotes); renderNotes(); }
@@ -365,12 +423,28 @@
                 updateHeaderDatum(dateInfo.raw);
             }
             const reader = new FileReader();
+            reader.onerror = function() {
+                showInfo('Kon het bestand niet lezen.', '⚠️');
+            };
             reader.onload = function(e) {
-                const wb = XLSX.read(new Uint8Array(e.target.result), {type: 'array'});
-                const jsonData = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {header: 1});
-                processExcelData(jsonData);
+                try {
+                    if (typeof XLSX === 'undefined') {
+                        showInfo('Excel-bibliotheek nog niet geladen. Probeer opnieuw.', '⚠️');
+                        return;
+                    }
+                    const wb = XLSX.read(new Uint8Array(e.target.result), {type: 'array'});
+                    const jsonData = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {header: 1});
+                    if (!jsonData || jsonData.length < 2) {
+                        showInfo('Het bestand lijkt leeg of heeft een onbekende opmaak.', '⚠️');
+                        return;
+                    }
+                    processExcelData(jsonData);
+                } catch(err) {
+                    showInfo('Fout bij verwerken: ' + err.message, '⚠️');
+                }
             };
             reader.readAsArrayBuffer(file);
+            event.target.value = '';
         }
 
         function processExcelData(data) {
@@ -387,13 +461,66 @@
                 price: parseFloat(row[priceCol]) || 0,
             })).filter(p => p.name && !seen.has(p.name.toLowerCase()) && seen.add(p.name.toLowerCase()));
 
+            // Vergelijk met vorige import
+            // Geheugen: max 2 lijsten — 'huidig' schuift naar 'vorig', oudere wordt verwijderd
+            const savedCurrent = localStorage.getItem('lageschaarCurrentNames');
+            const prevNames = savedCurrent ? new Set(JSON.parse(savedCurrent)) : new Set();
+            const newNames   = new Set(products.map(p => p.name.toLowerCase()));
+            const nieuweItems     = products.filter(p => !prevNames.has(p.name.toLowerCase()));
+            const verwijderdItems = [...prevNames].filter(n => !newNames.has(n)).map(n => ({name: n}));
+            // Huidige wordt vorige, nieuwe wordt huidige — oude 'vorige' vervalt automatisch
+            try {
+                localStorage.removeItem('lageschaarPrevNames'); // opruimen oude sleutel
+                localStorage.setItem('lageschaarCurrentNames', JSON.stringify([...newNames]));
+            } catch(e) {}
+
             currentProducts = products;
             usingBuiltin = false;
-            saveData();
+            // Sla alleen datum op, niet de lijst zelf (te groot voor localStorage)
             document.getElementById('product-count-header').textContent = `${products.length} soorten`;
             renderProducts();
+
+            // Toon import resultaat dialoog
+            showImportDialog(products.length, nieuweItems, verwijderdItems);
+        }
+
+        function showImportDialog(total, nieuw, verwijderd) {
+            document.getElementById('import-title').textContent = 'Voorraadlijst geïmporteerd';
+            document.getElementById('import-total').textContent = total;
+            document.getElementById('import-new-count').textContent = nieuw.length;
+            document.getElementById('import-removed-count').textContent = verwijderd.length;
+
+            let html = '';
+            if (nieuw.length > 0) {
+                html += `<div style="margin-bottom:10px;">
+                    <div style="font-weight:700;font-size:13px;color:#2e7d32;margin-bottom:6px;">🌱 Nieuwe planten (${nieuw.length}):</div>
+                    ${nieuw.map(p => `<div style="font-size:12px;padding:4px 8px;background:#f1f8f1;border-radius:4px;margin-bottom:3px;">
+                        <strong>${p.name}</strong> <span style="color:#888;">${p.potSize} · €${p.price.toFixed(2).replace('.',',')}</span>
+                    </div>`).join('')}
+                </div>`;
+            }
+            if (verwijderd.length > 0) {
+                html += `<div>
+                    <div style="font-weight:700;font-size:13px;color:#e65100;margin-bottom:6px;">❌ Niet meer in lijst (${verwijderd.length}):</div>
+                    ${verwijderd.map(p => `<div style="font-size:12px;padding:4px 8px;background:#fff8f1;border-radius:4px;margin-bottom:3px;">
+                        <strong>${p.name}</strong>
+                    </div>`).join('')}
+                </div>`;
+            }
+            if (nieuw.length === 0 && verwijderd.length === 0) {
+                html = '<div style="text-align:center;color:#888;font-size:13px;padding:10px;">Geen wijzigingen t.o.v. de vorige lijst.</div>';
+            }
+
+            document.getElementById('import-new-list').innerHTML = html;
+            const dlg = document.getElementById('import-dialog');
+            dlg.style.display = 'block';
+            // Scroll lijst terug naar boven
+            document.getElementById('import-new-list').scrollTop = 0;
+        }
+
+        function closeImportDialog() {
+            document.getElementById('import-dialog').style.display = 'none';
             switchTab('voorraad', document.querySelector('[onclick*="voorraad"]'));
-            showToast(`✓ ${products.length} planten geladen`);
         }
 
         // ── Voorraad tabel ──────────────────────────────────────────────
@@ -407,6 +534,14 @@
                     const words = p.name.toLowerCase().split(/\s+/);
                     return terms.every(t => words.some(w => w.replace(/['"]/g, '').startsWith(t.replace(/['"]/g, ''))));
                 });
+            }
+            if (filtered.length === 0 && currentProducts.length === 0) {
+                container.innerHTML = `<div class="empty-state">
+                    <div class="empty-state-icon">📂</div>
+                    <p style="font-weight:600;margin-bottom:8px;">Nog geen voorraadlijst geladen</p>
+                    <p style="font-size:13px;color:#aaa;">Ga naar ⚙️ om een Excel-bestand te uploaden</p>
+                </div>`;
+                return;
             }
             if (filtered.length === 0) {
                 container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🔍</div><p>Geen producten gevonden</p></div>';
@@ -428,7 +563,7 @@
                                 <td style="text-align:center;font-size:12px;">${p.quantity || '-'}</td>
                                 <td style="font-size:11px;">${p.potSize}</td>
                                 <td style="padding:6px 4px;" onclick="event.stopPropagation()">
-                                    <button class="btn-bestel" onclick="addToCart('${p.name.replace(/'/g, "\\'")}')">+</button>
+                                    <button class="btn-bestel" onclick="openNoteModal('${p.name.replace(/'/g, "\\'")}')">+</button>
                                 </td>
                                 <td style="text-align:right;white-space:nowrap;font-size:12px;"><strong>€${p.price.toFixed(2).replace('.', ',')}</strong></td>
                             </tr>
@@ -477,14 +612,25 @@
             updateMandTab();
         }
 
+        function editCartItem(index) {
+            const item = cart[index];
+            selectedProduct = { name: item.name, potSize: item.potSize, price: item.price, source: 'cart', cartIndex: index };
+            document.getElementById('modal-vrije-naam-field').style.display = 'none';
+            document.getElementById('modal-plant-name').textContent = item.name;
+            document.getElementById('note-aantal').value = item.qty;
+            document.getElementById('note-voor-wie').value = item.voorWie || '';
+            document.getElementById('note-contact').value = item.contact || '';
+            document.getElementById('note-opmerkingen').value = item.opmerking || '';
+            document.getElementById('modal-btn-notitie').style.display = 'none';
+            document.getElementById('modal-btn-mand').style.display = 'flex';
+            document.getElementById('note-modal').style.display = 'block';
+        }
+
         function clearMand() {
             if (cart.length === 0) return;
-            if (confirm('Winkelmand leegmaken?')) {
-                cart = [];
-                saveData();
-                renderCart();
-                updateMandTab();
-            }
+            showConfirm('Winkelmand leegmaken?', 'Alle items worden verwijderd.', 'Leeg maken', '#d32f2f', () => {
+                cart = []; saveData(); renderCart(); updateMandTab();
+            });
         }
 
         function updateMandTab() {
@@ -514,24 +660,27 @@
                 <div class="cart-item">
                     <div class="cart-item-header">
                         <div class="cart-item-name">${item.name}</div>
-                        <button class="btn-delete" onclick="removeFromCart(${i})" style="padding:4px 8px;">×</button>
+                        <div style="display:flex;gap:6px;align-items:center;">
+                            <button onclick="editCartItem(${i})" title="Bewerken"
+                                style="background:#e3f2fd;color:#1565c0;border:none;border-radius:4px;width:28px;height:28px;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;">✏️</button>
+                            <button class="btn-delete" onclick="removeFromCart(${i})" style="padding:4px 8px;">×</button>
+                        </div>
                     </div>
                     <div class="cart-item-meta">${item.potSize} · €${item.price.toFixed(2).replace('.', ',')} p/st · totaal <strong>€${(item.price * item.qty).toFixed(2).replace('.', ',')}</strong></div>
+                    ${item.voorWie ? `<div style="font-size:12px;color:#555;margin-top:4px;">👤 ${item.voorWie}</div>` : ''}
+                    ${item.contact ? `<div style="font-size:12px;color:#555;">📞 ${item.contact}</div>` : ''}
+                    ${item.opmerking ? `<div style="font-size:12px;color:#555;font-style:italic;">${item.opmerking}</div>` : ''}
                     <div class="qty-controls">
                         <button class="qty-btn" onclick="changeQty(${i}, -1)">−</button>
                         <span class="qty-display">${item.qty}</span>
                         <button class="qty-btn" onclick="changeQty(${i}, +1)">+</button>
                     </div>
-                    <input type="text" placeholder="Voor wie..." value="${item.voorWie || ''}"
-                        oninput="cart[${i}].voorWie=this.value;saveData()"
-                        style="margin-top:8px;width:100%;padding:7px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;color:#333;background:#fff;"
-                        autocomplete="off" autocorrect="off" autocapitalize="sentences" spellcheck="false">
                 </div>
             `).join('');
         }
 
         function exportMand() {
-            if (cart.length === 0) { alert('Winkelmand is leeg.'); return; }
+            if (cart.length === 0) { showInfo('Winkelmand is leeg.', '🛒'); return; }
             const datum = new Date().toLocaleDateString('nl-NL');
             const totaal = cart.reduce((s, c) => s + c.price * c.qty, 0);
             let tekst = `Bestelling Lageschaar — ${datum}\n`;
@@ -539,7 +688,9 @@
             cart.forEach(item => {
                 tekst += `${String(item.qty).padStart(3)}x  ${item.name}\n`;
                 tekst += `       ${item.potSize}  ·  €${item.price.toFixed(2).replace('.',',')} p/st  =  €${(item.price*item.qty).toFixed(2).replace('.',',')}\n`;
-                if (item.voorWie) tekst += `       Voor wie: ${item.voorWie}\n`;
+                if (item.voorWie)   tekst += `       Voor wie: ${item.voorWie}\n`;
+                if (item.contact)   tekst += `       Contact:  ${item.contact}\n`;
+                if (item.opmerking) tekst += `       Notitie:  ${item.opmerking}\n`;
             });
             tekst += '─'.repeat(40) + '\n';
             tekst += `TOTAAL: €${totaal.toFixed(2).replace('.',',')}\n`;
@@ -560,6 +711,8 @@
             document.getElementById('note-voor-wie').value = '';
             document.getElementById('note-contact').value = '';
             document.getElementById('note-opmerkingen').value = '';
+            document.getElementById('modal-btn-notitie').style.display = 'flex';
+            document.getElementById('modal-btn-mand').style.display = 'none';
             document.getElementById('note-modal').style.display = 'block';
         }
 
@@ -572,6 +725,8 @@
             document.getElementById('note-voor-wie').value = '';
             document.getElementById('note-contact').value = '';
             document.getElementById('note-opmerkingen').value = '';
+            document.getElementById('modal-btn-notitie').style.display = 'none';
+            document.getElementById('modal-btn-mand').style.display = 'flex';
             document.getElementById('note-modal').style.display = 'block';
         }
 
@@ -582,6 +737,23 @@
 
         function saveNote() {
             if (!selectedProduct) return;
+
+            // Bestaande notitie bewerken
+            if (selectedProduct.source === 'note') {
+                const note = notes[selectedProduct.noteIndex];
+                if (note) {
+                    note.aantal      = parseInt(document.getElementById('note-aantal').value) || 1;
+                    note.voorWie     = document.getElementById('note-voor-wie').value.trim();
+                    note.contact     = document.getElementById('note-contact').value.trim();
+                    note.opmerkingen = document.getElementById('note-opmerkingen').value.trim();
+                }
+                saveData();
+                renderNotes();
+                closeNoteModal();
+                return;
+            }
+
+            // Nieuwe notitie toevoegen
             const plantNaam = selectedProduct.source === 'vrij'
                 ? (document.getElementById('modal-vrije-naam').value.trim() || '(geen naam)')
                 : selectedProduct.name;
@@ -602,6 +774,55 @@
             switchTab('notities', document.querySelector('[onclick*="notities"]'));
         }
 
+        function saveToCart() {
+            if (!selectedProduct) return;
+            const aantal    = parseInt(document.getElementById('note-aantal').value) || 1;
+            const voorWie   = document.getElementById('note-voor-wie').value.trim();
+            const contact   = document.getElementById('note-contact').value.trim();
+            const opmerking = document.getElementById('note-opmerkingen').value.trim();
+
+            // Bewerken van bestaand winkelmand-item
+            if (selectedProduct.source === 'cart') {
+                const item = cart[selectedProduct.cartIndex];
+                if (item) {
+                    item.qty      = aantal;
+                    item.voorWie  = voorWie;
+                    item.contact  = contact;
+                    item.opmerking = opmerking;
+                }
+                saveData();
+                renderCart();
+                closeNoteModal();
+                return;
+            }
+
+            // Nieuw item toevoegen
+            const plantNaam = selectedProduct.source === 'vrij'
+                ? (document.getElementById('modal-vrije-naam').value.trim() || '(geen naam)')
+                : selectedProduct.name;
+
+            const existing = cart.find(c => c.name === plantNaam);
+            if (existing) {
+                existing.qty += aantal;
+                if (voorWie)   existing.voorWie   = voorWie;
+                if (contact)   existing.contact   = contact;
+                if (opmerking) existing.opmerking = opmerking;
+            } else {
+                cart.push({
+                    name: plantNaam,
+                    potSize: selectedProduct.potSize || '',
+                    price: selectedProduct.price || 0,
+                    qty: aantal,
+                    voorWie, contact, opmerking
+                });
+            }
+            saveData();
+            renderCart();
+            updateMandTab();
+            closeNoteModal();
+            switchTab('mand', document.querySelector('[onclick*=\'mand\']'));
+        }
+
         function renderNotes() {
             const container = document.getElementById('notes-list');
             const count = document.getElementById('notes-count');
@@ -615,7 +836,11 @@
                 <div class="note-item">
                     <div class="note-header">
                         <div class="note-plant">${note.plant}</div>
-                        <button class="btn-delete" onclick="deleteNote(${i})">×</button>
+                        <div style="display:flex;gap:6px;align-items:center;">
+                            <button onclick="editNote(${i})" title="Bewerken"
+                                style="background:#e3f2fd;color:#1565c0;border:none;border-radius:4px;width:28px;height:28px;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;">✏️</button>
+                            <button class="btn-delete" onclick="deleteNote(${i})">×</button>
+                        </div>
                     </div>
                     <div class="note-details">
                         <div><strong>Aantal:</strong> ${note.aantal} | <strong>Voorraad:</strong> ${note.voorraad || '-'}</div>
@@ -629,20 +854,34 @@
         }
 
         function deleteNote(index) {
-            if (confirm('Deze notitie verwijderen?')) {
+            showConfirm('Notitie verwijderen?', '', 'Verwijderen', '#d32f2f', () => {
                 notes.splice(index, 1); saveData(); renderNotes();
-            }
+            });
+        }
+
+        function editNote(index) {
+            const note = notes[index];
+            selectedProduct = { name: note.plant, quantity: note.voorraad, potSize: note.potSize, price: note.price, source: 'note', noteIndex: index };
+            document.getElementById('modal-vrije-naam-field').style.display = 'none';
+            document.getElementById('modal-plant-name').textContent = note.plant;
+            document.getElementById('note-aantal').value = note.aantal || 1;
+            document.getElementById('note-voor-wie').value = note.voorWie || '';
+            document.getElementById('note-contact').value = note.contact || '';
+            document.getElementById('note-opmerkingen').value = note.opmerkingen || '';
+            document.getElementById('modal-btn-notitie').style.display = 'flex';
+            document.getElementById('modal-btn-mand').style.display = 'none';
+            document.getElementById('note-modal').style.display = 'block';
         }
 
         function clearAllNotes() {
-            if (confirm('Alle notities verwijderen?')) {
+            showConfirm('Alle notities verwijderen?', 'Dit kan niet ongedaan worden gemaakt.', 'Alles verwijderen', '#d32f2f', () => {
                 notes = []; saveData(); renderNotes();
-            }
+            });
         }
 
         // ── Backup ──────────────────────────────────────────────────────
         function exportBackup() {
-            if (notes.length === 0) { alert('Geen notities om te exporteren.'); return; }
+            if (notes.length === 0) { showInfo('Geen notities om te exporteren.', '📝'); return; }
             const blob = new Blob([JSON.stringify({notities: notes, exportDatum: new Date().toISOString()}, null, 2)], {type: 'application/json'});
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a'); a.href = url; a.download = 'backup-lageschaar.json'; a.click();
@@ -659,7 +898,7 @@
                     if (imported.notities) notes = imported.notities;
                     saveData(); renderNotes();
                     showToast(`✓ ${notes.length} notities hersteld`);
-                } catch { alert('Ongeldig bestand.'); }
+                } catch { showInfo('Ongeldig bestand.', '⚠️'); }
             };
             reader.readAsText(file);
             event.target.value = '';
@@ -672,6 +911,38 @@
             document.getElementById(`${tabName}-tab`).classList.add('active');
             if (btn) btn.classList.add('active');
         }
+
+        // ── In-app dialogen ─────────────────────────────────────────────
+        let _confirmCallback = null;
+
+        function showConfirm(message, sub, okLabel, okColor, callback) {
+            document.getElementById('confirm-message').textContent = message;
+            document.getElementById('confirm-sub').textContent = sub || '';
+            document.getElementById('confirm-icon').textContent = okColor === '#d32f2f' ? '🗑️' : '⚠️';
+            const okBtn = document.getElementById('confirm-ok');
+            okBtn.textContent = okLabel || 'Bevestigen';
+            okBtn.style.background = okColor || '#d32f2f';
+            _confirmCallback = callback;
+            document.getElementById('confirm-dialog').style.display = 'block';
+        }
+
+        function closeConfirm(confirmed) {
+            document.getElementById('confirm-dialog').style.display = 'none';
+            if (confirmed && _confirmCallback) _confirmCallback();
+            _confirmCallback = null;
+        }
+
+        function showInfo(message, icon) {
+            document.getElementById('info-icon').textContent = icon || 'ℹ️';
+            document.getElementById('info-message').textContent = message;
+            document.getElementById('info-dialog').style.display = 'block';
+        }
+
+        function closeInfo() {
+            document.getElementById('info-dialog').style.display = 'none';
+        }
+
+        document.getElementById('confirm-ok').addEventListener('click', () => closeConfirm(true));
 
         document.addEventListener('visibilitychange', () => { if (document.hidden) saveData(); });
         window.addEventListener('beforeunload', saveData);
